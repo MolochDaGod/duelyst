@@ -62,12 +62,12 @@ function clipsOf(u) {
 /** Packed-sheet flyers (wings / hover). Not windblade, not mandrake, not all *support. */
 function isAirId(id) {
   const s = String(id || "").toLowerCase();
-  if (s === "f1_support" || s === "f1_sunstonemaiden") return true;
+  if (s === "f1_support" || s === "f1_sunstonemaiden" || s === "f2_stormkage") return true;
   if (/mandrake|windblade|sandhowler|shadowlord/.test(s)) return false;
   const parts = s.split(/[_-]+/);
   if (parts.some((p) => /^(fly|flying|wing|wings|drake|drakes|wyrm|phoenix|owl|hawk|raven|bat|moth|aether|vespyr|griffin|gryphon|gryph|seraph|wisp|harpy|sky)$/.test(p))) return true;
   if (parts.some((p) => /(?:wing|wyrm|drake|gryph|seraph|wisp|hawk|owl|aether|vespyr|phoenix|harpy|raven)/.test(p))) return true;
-  return /pandoraminionfly|f1_support|f1_sunstonemaiden/.test(s);
+  return /pandoraminionfly|f1_support|f1_sunstonemaiden|f2_stormkage/.test(s);
 }
 
 function markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode) {
