@@ -59,6 +59,17 @@ function clipsOf(u) {
   return (u.clips || u.anims || []).map((c) => String(c).toLowerCase());
 }
 
+/** Packed-sheet flyers (wings / hover). Not windblade, not mandrake, not all *support. */
+function isAirId(id) {
+  const s = String(id || "").toLowerCase();
+  if (s === "f1_support") return true;
+  if (/mandrake|windblade|sandhowler|shadowlord/.test(s)) return false;
+  const parts = s.split(/[_-]+/);
+  if (parts.some((p) => /^(fly|flying|wing|wings|drake|drakes|wyrm|phoenix|owl|hawk|raven|bat|moth|aether|vespyr|griffin|gryphon|gryph|seraph|wisp|harpy|sky)$/.test(p))) return true;
+  if (parts.some((p) => /(?:wing|wyrm|drake|gryph|seraph|wisp|hawk|owl|aether|vespyr|phoenix|harpy|raven)/.test(p))) return true;
+  return /pandoraminionfly|f1_support/.test(s);
+}
+
 function markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode) {
   const on = new Set();
   if (hasProj || /ranged|archer|slinger|bow|cannon|gun|mage|wizard|staff|orb|shot|sniper|crossbow/.test(id)) {
@@ -67,10 +78,7 @@ function markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode) {
     on.add("melee");
   }
   if (hasCast && !role.startsWith("general")) on.add("ranged");
-  if (
-    /fly|wing|drake|wyrm|phoenix|owl|hawk|raven|bat|moth|aether|spirit|wraith|ghost|vespyr|wind|sky|griffin|gryphon/.test(id)
-    || role === "critter"
-  ) on.add("flying");
+  if (isAirId(id) || role === "critter") on.add("flying");
   if (
     /rush|charge|celerity|dash|wolf|hound|lion|knight|raider|berserk|assassin|rogue|stalker|pounce|leap|swift|hunter|predator/.test(id)
     || role === "mercenary"
@@ -168,7 +176,7 @@ export function clashAbility(u) {
     } else {
       keys.push("melee");
     }
-    if (/fly|celerit|wing/.test(id) || role === "critter") {
+    if (isAirId(id) || role === "critter") {
       keys.push("flying");
       cost = Math.max(cost, 4);
       attack = Math.max(attack, 3);
