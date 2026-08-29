@@ -417,16 +417,33 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff8dc", "#1a2748");
   }
   const onKeys = new Set((stats.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(stats.keywords || []));
-  for (const slot of L.playStyles || []) {
+  const ribbon = L.ribbon || { x: 22, y: 168, w: 151, h: 22 };
+  const styles = L.playStyles || [];
+  const nIcon = styles.length || 6;
+  const icon = 20;
+  const gap = nIcon > 1 ? (ribbon.w - icon * nIcon) / (nIcon - 1) : 0;
+  const iy = ribbon.y + Math.max(0, (ribbon.h - icon) / 2);
+  styles.forEach((slot, i) => {
+    const x = ribbon.x + i * (icon + gap);
+    const y = iy;
     const on = onKeys.has(slot.key);
     ctx.save();
-    ctx.globalAlpha = on ? 1 : 0.18;
+    ctx.beginPath();
+    ctx.arc(x + icon / 2, y + icon / 2, icon / 2 + 1, 0, Math.PI * 2);
+    ctx.fillStyle = on ? "rgba(40, 24, 8, 0.92)" : "rgba(12, 8, 14, 0.72)";
+    ctx.fill();
+    if (on) {
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = "#c9a227";
+      ctx.stroke();
+    }
+    ctx.globalAlpha = on ? 1 : 0.55;
     const badge = tcgBit[slot.badge];
-    if (badge) ctx.drawImage(badge, slot.x - 1, slot.y - 1, slot.w + 2, slot.h + 2);
+    if (badge) ctx.drawImage(badge, x - 1, y - 1, icon + 2, icon + 2);
     const ic = tcgBit[slot.icon];
-    if (ic) ctx.drawImage(ic, slot.x, slot.y, slot.w, slot.h);
+    if (ic) ctx.drawImage(ic, x + 1, y + 1, icon - 2, icon - 2);
     ctx.restore();
-  }
+  });
   const t = L.text;
   if (t) {
     const cx = t.x + t.w / 2;

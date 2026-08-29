@@ -11,10 +11,10 @@
     "h": 112
   },
   "ribbon": {
-    "x": 16,
-    "y": 170,
-    "w": 163,
-    "h": 20
+    "x": 22,
+    "y": 168,
+    "w": 151,
+    "h": 22
   },
   "stats": {
     "cost": { "cx": 176, "cy": 18, "r": 15, "fill": "#3a7bd9", "label": "COST", "size": 14, "icon": "slots/crystal-mana.png" },
@@ -30,12 +30,12 @@
     "stack": "Cambria, Constantia, Palatino Linotype, Palatino, Georgia, Times New Roman, serif"
   },
   "playStyles": [
-    { "key": "melee", "x": 18, "y": 171, "w": 16, "h": 16, "icon": "slots/attack.png", "badge": "slots/badge-attack.png" },
-    { "key": "ranged", "x": 36, "y": 171, "w": 16, "h": 16, "icon": "slots/mana.png", "badge": "slots/badge-mana.png" },
-    { "key": "splash", "x": 54, "y": 171, "w": 16, "h": 16, "icon": "slots/ability.png", "badge": "slots/badge-ability.png" },
-    { "key": "flying", "x": 124, "y": 171, "w": 16, "h": 16, "icon": "slots/rarity.png", "badge": "slots/badge-rarity.png" },
-    { "key": "tank", "x": 142, "y": 171, "w": 16, "h": 16, "icon": "slots/type.png", "badge": "slots/badge-type.png" },
-    { "key": "charge", "x": 160, "y": 171, "w": 16, "h": 16, "icon": "slots/health.png", "badge": "slots/badge-health.png" }
+    { "key": "melee", "icon": "slots/attack.png", "badge": "slots/badge-attack.png" },
+    { "key": "ranged", "icon": "slots/mana.png", "badge": "slots/badge-mana.png" },
+    { "key": "splash", "icon": "slots/ability.png", "badge": "slots/badge-ability.png" },
+    { "key": "flying", "icon": "slots/rarity.png", "badge": "slots/badge-rarity.png" },
+    { "key": "tank", "icon": "slots/type.png", "badge": "slots/badge-type.png" },
+    { "key": "charge", "icon": "slots/health.png", "badge": "slots/badge-health.png" }
   ],
   "text": {
     "x": 18,

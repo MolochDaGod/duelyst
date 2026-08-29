@@ -46,6 +46,39 @@ function clipsOf(u) {
   return (u.clips || u.anims || []).map((c) => String(c).toLowerCase());
 }
 
+function markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode) {
+  const on = new Set();
+  if (hasProj || /ranged|archer|slinger|bow|cannon|gun|mage|wizard|staff|orb|shot|sniper|crossbow/.test(id)) {
+    on.add("ranged");
+  } else if (role !== "structure" && !clips.includes("open")) {
+    on.add("melee");
+  }
+  if (hasCast && !role.startsWith("general")) on.add("ranged");
+  if (
+    /fly|wing|drake|wyrm|phoenix|owl|hawk|raven|bat|moth|aether|spirit|wraith|ghost|vespyr|wind|sky|griffin|gryphon/.test(id)
+    || role === "critter"
+  ) on.add("flying");
+  if (
+    /rush|charge|celerity|dash|wolf|hound|lion|knight|raider|berserk|assassin|rogue|stalker|pounce|leap|swift|hunter|predator/.test(id)
+    || role === "mercenary"
+    || role === "token-minion"
+  ) on.add("charge");
+  if (
+    /frenzy|splash|nova|blast|bomb|grenade|storm|quake|meteor|flame|magma|lava|explod|pulse|wave|fire|frost|ice|poison/.test(id)
+    || hasExplode
+  ) on.add("splash");
+  if (
+    /provoke|guard|ironcliffe|golem|tank|titan|wall|fort|shield|sentinel|monument|coloss|obelysk/.test(id)
+    || role === "golem"
+    || role === "structure"
+    || role.startsWith("general")
+    || role === "boss"
+    || role === "boss-part"
+  ) on.add("tank");
+  if (role.startsWith("general") && !on.has("ranged")) on.add("melee");
+  return on;
+}
+
 export function clashAbility(u) {
   const id = String(u.id || "").toLowerCase();
   const role = String(u.role || "minion");
@@ -180,7 +213,11 @@ export function clashAbility(u) {
 
   const uniq = [...new Set(keys)];
   if (!uniq.length) uniq.push("melee");
-  const styles = PLAY_STYLES.map((k) => ({ key: k, on: uniq.includes(k) }));
+  const styleSet = markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode);
+  for (const k of uniq) {
+    if (PLAY_STYLES.includes(k)) styleSet.add(k);
+  }
+  const styles = PLAY_STYLES.map((k) => ({ key: k, on: styleSet.has(k) }));
   const vfx = {
     slash: uniq.includes("ranged") ? "energyProjectile" : "slashRedLg",
     burst: uniq.includes("death") || uniq.includes("splash") ? "arcaneslash" : "critSlash",
