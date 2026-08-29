@@ -269,8 +269,8 @@ function strokeText(ctx, s, x, y, size, fill, stroke) {
   ctx.font = `bold ${size}px ${CARD_FONT}`;
   ctx.lineJoin = "round";
   ctx.miterLimit = 2;
-  ctx.strokeStyle = stroke || "#140c08";
-  ctx.lineWidth = Math.max(3, size / 3.2);
+  ctx.strokeStyle = stroke || "#1a2748";
+  ctx.lineWidth = Math.max(3.5, size / 2.8);
   ctx.fillStyle = fill || "#fff4d6";
   ctx.strokeText(s, x, y);
   ctx.fillText(s, x, y);
@@ -292,7 +292,7 @@ function drawNumber(ctx, n, cx, cy, h) {
   if (!bits.length || bits.some((b) => !b)) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    strokeText(ctx, s, cx, cy + 1, h || 14, "#fffef6", "#1a1008");
+    strokeText(ctx, s, cx, cy + 1, h || 14, "#fffef6", "#1a2748");
     return;
   }
   const hgt = h || 14;
@@ -414,7 +414,7 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const ns = fitName(ctx, label, nm.w - 4, fonts.name);
-    strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff6d2", "#120a06");
+    strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff8dc", "#1a2748");
   }
   const onKeys = new Set((stats.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(stats.keywords || []));
   for (const slot of L.playStyles || []) {
@@ -436,7 +436,7 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     const metaSize = fonts.meta || 8;
     const bodySize = fonts.body || 9;
     let yy = t.y + 8;
-    strokeText(ctx, String(stats.kindLine || "TROOP"), cx, yy, kindSize, "#5a220e", "#f4e6c4");
+    strokeText(ctx, String(stats.kindLine || "TROOP"), cx, yy, kindSize, "#2a1408", "#c9a227");
     yy += kindSize + 6;
     ctx.font = `bold ${metaSize}px ${CARD_FONT}`;
     let ms = metaSize;
@@ -445,14 +445,14 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
       ms -= 0.5;
       ctx.font = `bold ${ms}px ${CARD_FONT}`;
     }
-    strokeText(ctx, String(stats.metaLine || ""), cx, yy, ms, "#1a120c", "#f7edd4");
+    strokeText(ctx, String(stats.metaLine || ""), cx, yy, ms, "#1a1008", "#c9a227");
     yy += ms + 7;
     const body = String(stats.passive || "").trim();
     ctx.font = `bold ${bodySize}px ${CARD_FONT}`;
     const maxH = t.y + t.h - 2;
     for (const line of wrapLines(ctx, body, t.w - 8).slice(0, 2)) {
       if (yy + bodySize > maxH) break;
-      strokeText(ctx, line, cx, yy, bodySize, "#140c08", "#f7edd4");
+      strokeText(ctx, line, cx, yy, bodySize, "#1a1008", "#c9a227");
       yy += bodySize + 3;
     }
   }
