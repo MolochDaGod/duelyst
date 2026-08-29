@@ -28,7 +28,7 @@ export const ABILITY_DEFS = {
   splash: { label: "Splash", short: "SPL", text: "Area hit, like Wizards." },
   flying: { label: "Air", short: "AIR", text: "Air troop. Ignores walls." },
   tank: { label: "Tank", short: "TNK", text: "Prefers defenses. Soaks the keep." },
-  charge: { label: "Rush", short: "RSH", text: "Rushes and jumps walls, like Hog Rider." },
+  charge: { label: "Rush", short: "RSH", text: "Dash to the enemy every 10s." },
 };
 
 export const KEYWORDS = {
@@ -36,7 +36,7 @@ export const KEYWORDS = {
   ranged: ABILITY_DEFS.ranged.text,
   splash: ABILITY_DEFS.splash.text,
   flying: ABILITY_DEFS.flying.text,
-  charge: ABILITY_DEFS.charge.text,
+  charge: "Dash to the enemy every 10s.",
   tank: ABILITY_DEFS.tank.text,
   swarm: "Cheap housing. Keep sending.",
   building: "Siege building. Ticks on a clock.",
@@ -71,6 +71,25 @@ function isAirId(id) {
   return false;
 }
 
+function isSplashId(id, role, hasCast, hasExplode) {
+  if (hasExplode) return true;
+  if (hasCast && !String(role).startsWith("general")) return true;
+  if (/frenzy|splash|nova|blast|bomb|grenade|storm|quake|meteor|flame|magma|lava|explod|pulse|wave|fire|frost|ice|poison|plague|lightning|thunder|arcane|cleave|whirl|spin|seismic|starfire|sunburst|void|beam|plasma/.test(id)) return true;
+  if (id.startsWith("f5_") && role === "minion" && !/egg|golem|tank/.test(id)) return true;
+  if (id.startsWith("f6_") && /ice|frost|snow|winter|seismic|voice|wisp|element|horn/.test(id)) return true;
+  if (/mage|wizard|warlock|alchem|caster/.test(id) && role === "minion") return true;
+  return false;
+}
+
+function isRushId(id, role) {
+  if (role === "structure" || role === "golem" || role === "token-minion" || String(role).startsWith("boss")) return false;
+  if (role === "mercenary") return true;
+  if (/rush|charge|celerity|dash|wolf|hound|lion|knight|raider|berserk|assassin|rogue|stalker|pounce|leap|swift|hunter|predator|pirate|blink|ronin|saboteur|reaver|fiend|wraith/.test(id)) return true;
+  if (id.startsWith("f2_") && role === "minion") return true;
+  if (id.startsWith("f4_") && /wraith|haunt|shade|shadow|night|blood|fiend|reaver/.test(id)) return true;
+  return false;
+}
+
 function markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode) {
   const on = new Set();
   if (hasProj || /ranged|archer|slinger|bow|cannon|gun|mage|wizard|staff|orb|shot|sniper|crossbow/.test(id)) {
@@ -80,15 +99,8 @@ function markPlayStyles(id, role, clips, hasProj, hasCast, hasExplode) {
   }
   if (hasCast && !role.startsWith("general")) on.add("ranged");
   if (isAirId(id) || role === "critter") on.add("flying");
-  if (
-    /rush|charge|celerity|dash|wolf|hound|lion|knight|raider|berserk|assassin|rogue|stalker|pounce|leap|swift|hunter|predator/.test(id)
-    || role === "mercenary"
-    || role === "token-minion"
-  ) on.add("charge");
-  if (
-    /frenzy|splash|nova|blast|bomb|grenade|storm|quake|meteor|flame|magma|lava|explod|pulse|wave|fire|frost|ice|poison/.test(id)
-    || hasExplode
-  ) on.add("splash");
+  if (isRushId(id, role)) on.add("charge");
+  if (isSplashId(id, role, hasCast, hasExplode)) on.add("splash");
   if (
     /provoke|guard|ironcliffe|golem|tank|titan|wall|fort|shield|sentinel|monument|coloss|obelysk/.test(id)
     || role === "golem"
@@ -187,7 +199,7 @@ export function clashAbility(u) {
       effect = hasProj ? EFFECT.bolt : EFFECT.slash;
       passive = KEYWORDS.flying;
     }
-    if (/rush|charge/.test(id)) {
+    if (isRushId(id, role)) {
       keys.push("charge");
       attack = Math.max(attack, 5);
       health = Math.max(health, 4);
@@ -195,7 +207,7 @@ export function clashAbility(u) {
       effect = EFFECT.slam;
       passive = KEYWORDS.charge;
     }
-    if (/frenzy|splash|nova/.test(id) || hasExplode) {
+    if (isSplashId(id, role, hasCast, hasExplode)) {
       keys.push("splash");
       if (hasExplode) keys.push("death");
       effect = EFFECT.burst;
@@ -251,7 +263,7 @@ export function clashAbility(u) {
   const abilityNames = PLAY_STYLES.filter((k) => styleSet.has(k)).map((k) => ABILITY_DEFS[k].label);
   const specials = [];
   if (styleSet.has("tank")) specials.push("Prefers defenses.");
-  if (styleSet.has("charge")) specials.push("Jumps walls.");
+  if (styleSet.has("charge")) specials.push("Dash to the enemy every 10s.");
   if (styleSet.has("flying")) specials.push("Air troop.");
   if (styleSet.has("splash")) specials.push("Splash damage.");
   if (styleSet.has("ranged") && !styleSet.has("splash")) specials.push("Ranged DPS.");
@@ -277,5 +289,6 @@ export function clashAbility(u) {
     speed,
     effect,
     vfx,
+    dash: styleSet.has("charge") ? { every: 10, toward: "enemy" } : null,
   };
 }
