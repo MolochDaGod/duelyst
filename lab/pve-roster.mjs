@@ -36,7 +36,7 @@ export function flattenCityPve(pvePath = PVE_PATH) {
         effect: cls === "magical" ? "Burst" : cls === "ranged" ? "Bolt" : "Slash",
         passive: abilities.join(". ") || (row.abilityDesc || ""),
         image: row.image,
-        mintImage: "https://battle.thc-labz.xyz" + (String(row.image || "").startsWith("/") ? row.image : "/" + row.image),
+        mintImage: "https://assets.grudge-studio.com/sprites/thc-pve/" + String(row.image || "").split("/").pop(),
       });
     };
     if (city.boss) push(city.boss, "boss");
