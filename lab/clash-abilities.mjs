@@ -15,21 +15,34 @@ export const COMMANDER = {
   role: "Placed on the castle. Passives and one active from the NFT. Not a deck card.",
 };
 
-/** Six ribbon icons = play styles / ability marks (always this order). */
+/**
+ * Six ribbon icons = Clash of Clans troop abilities (always this order).
+ * Keys stay melee/ranged/splash/flying/tank/charge so chrome slots stay wired.
+ */
 export const PLAY_STYLES = ["melee", "ranged", "splash", "flying", "tank", "charge"];
+export const ABILITIES = PLAY_STYLES;
+
+export const ABILITY_DEFS = {
+  melee: { label: "Melee", short: "MEL", text: "Melee DPS. Hits the nearest keep." },
+  ranged: { label: "Range", short: "RNG", text: "Shoots from the back, like Archers." },
+  splash: { label: "Splash", short: "SPL", text: "Area hit, like Wizards." },
+  flying: { label: "Air", short: "AIR", text: "Air troop. Ignores walls." },
+  tank: { label: "Tank", short: "TNK", text: "Prefers defenses. Soaks the keep." },
+  charge: { label: "Rush", short: "RSH", text: "Rushes and jumps walls, like Hog Rider." },
+};
 
 export const KEYWORDS = {
-  melee: "Closes and cuts.",
-  ranged: "Picks from the backline.",
-  splash: "Hits the cluster.",
-  flying: "Over the wall.",
-  charge: "First contact is a slam.",
-  tank: "Eats the tower shots.",
-  swarm: "Cheap bodies. Keep sending.",
-  building: "Planted. Ticks. Spawns.",
-  spawn: "Drops a troop on a clock.",
-  death: "Dies loud.",
-  spell: "Casts the packed clip.",
+  melee: ABILITY_DEFS.melee.text,
+  ranged: ABILITY_DEFS.ranged.text,
+  splash: ABILITY_DEFS.splash.text,
+  flying: ABILITY_DEFS.flying.text,
+  charge: ABILITY_DEFS.charge.text,
+  tank: ABILITY_DEFS.tank.text,
+  swarm: "Cheap housing. Keep sending.",
+  building: "Siege building. Ticks on a clock.",
+  spawn: "Spawns a troop, like a Witch.",
+  death: "Death bomb, like a Balloon.",
+  spell: "Casts an active, like a hero ability.",
 };
 
 const EFFECT = {
@@ -226,12 +239,28 @@ export function clashAbility(u) {
   if (uniq.includes("flying")) vfx.slash = "slashBlueLg";
   if (uniq.includes("spell")) vfx.burst = "arcaneslash";
 
+  const abilityNames = PLAY_STYLES.filter((k) => styleSet.has(k)).map((k) => ABILITY_DEFS[k].label);
+  const specials = [];
+  if (styleSet.has("tank")) specials.push("Prefers defenses.");
+  if (styleSet.has("charge")) specials.push("Jumps walls.");
+  if (styleSet.has("flying")) specials.push("Air troop.");
+  if (styleSet.has("splash")) specials.push("Splash damage.");
+  if (styleSet.has("ranged") && !styleSet.has("splash")) specials.push("Ranged DPS.");
+  if (uniq.includes("death") || hasExplode) specials.push("Death bomb.");
+  if (uniq.includes("spawn") || uniq.includes("building") || hasOpen) specials.push("Spawns a troop.");
+  if (uniq.includes("spell") || hasCast) specials.push("Casts an active.");
+  if (!specials.length && styleSet.has("melee")) specials.push("Melee DPS.");
+  const cocPassive = specials.slice(0, 3).join(" ");
+
   return {
     kind,
     keywords: uniq,
     playStyles: styles,
-    text: passive,
-    passive,
+    abilities: styles,
+    abilityNames,
+    preferredTarget: styleSet.has("tank") ? "Defenses" : "Any",
+    text: cocPassive,
+    passive: cocPassive,
     cost,
     attack,
     health,

@@ -192,7 +192,7 @@
       <select id="anim"></select>
       <div class="row" id="animTabs"></div>
       <div class="abil" id="fxNote"></div>
-      <div class="abil" id="commanderNote">Commander: your GROWERZ / THC Labz / Grudge cNFT sits on the castle and grants NFT passives. Not a deck card. Ribbon icons = melee · ranged · splash · flying · tank · charge (lit = this card).</div>
+      <div class="abil" id="commanderNote">Commander: GROWERZ / THC Labz / Grudge cNFT on the castle (hero ability / passives). Deck troops use Clash of Clans abilities: Melee · Range · Splash · Air · Tank · Rush (gold ring = this card).</div>
     </div>
     <div class="strips" id="strips"></div>
   </aside>
@@ -259,7 +259,9 @@ function faceStats(u) {
     passive,
     keywords: keys,
     playStyles: u.playStyles || [],
-    kindLine: (u.kind || "troop").toUpperCase(),
+    kindLine: (u.abilityNames && u.abilityNames.length)
+      ? u.abilityNames.join(" · ").toUpperCase()
+      : (u.kind || "troop").toUpperCase(),
     metaLine: `${rangeBit}  ·  SPD ${speed}  ·  ${String(effect).toUpperCase()}`,
     vfx: u.vfx || {},
   };
@@ -417,19 +419,18 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff8dc", "#1a2748");
   }
   const onKeys = new Set((stats.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(stats.keywords || []));
-  const ribbon = L.ribbon || { x: 22, y: 168, w: 151, h: 22 };
+  const ribbon = L.ribbon || { x: 16, y: 164, w: 163, h: 32 };
   const styles = L.playStyles || [];
   const nIcon = styles.length || 6;
-  const icon = 20;
+  const icon = 18;
   const gap = nIcon > 1 ? (ribbon.w - icon * nIcon) / (nIcon - 1) : 0;
-  const iy = ribbon.y + Math.max(0, (ribbon.h - icon) / 2);
   styles.forEach((slot, i) => {
     const x = ribbon.x + i * (icon + gap);
-    const y = iy;
+    const y = ribbon.y;
     const on = onKeys.has(slot.key);
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x + icon / 2, y + icon / 2, icon / 2 + 1, 0, Math.PI * 2);
+    ctx.arc(x + icon / 2, y + icon / 2, icon / 2 + 1.2, 0, Math.PI * 2);
     ctx.fillStyle = on ? "rgba(40, 24, 8, 0.92)" : "rgba(12, 8, 14, 0.72)";
     ctx.fill();
     if (on) {
@@ -442,6 +443,16 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     if (badge) ctx.drawImage(badge, x - 1, y - 1, icon + 2, icon + 2);
     const ic = tcgBit[slot.icon];
     if (ic) ctx.drawImage(ic, x + 1, y + 1, icon - 2, icon - 2);
+    ctx.globalAlpha = 1;
+    ctx.font = `bold 6px ${CARD_FONT}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = "#120a06";
+    ctx.fillStyle = on ? "#ffe27a" : "#9a9080";
+    const lab = slot.label || slot.key;
+    ctx.strokeText(lab, x + icon / 2, y + icon + 1);
+    ctx.fillText(lab, x + icon / 2, y + icon + 1);
     ctx.restore();
   });
   const t = L.text;
@@ -453,7 +464,13 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     const metaSize = fonts.meta || 8;
     const bodySize = fonts.body || 9;
     let yy = t.y + 8;
-    strokeText(ctx, String(stats.kindLine || "TROOP"), cx, yy, kindSize, "#2a1408", "#c9a227");
+    let ks = kindSize;
+    ctx.font = `bold ${ks}px ${CARD_FONT}`;
+    while (ks > 6 && ctx.measureText(String(stats.kindLine || "")).width > t.w - 8) {
+      ks -= 0.5;
+      ctx.font = `bold ${ks}px ${CARD_FONT}`;
+    }
+    strokeText(ctx, String(stats.kindLine || "TROOP"), cx, yy, ks, "#2a1408", "#c9a227");
     yy += kindSize + 6;
     ctx.font = `bold ${metaSize}px ${CARD_FONT}`;
     let ms = metaSize;
