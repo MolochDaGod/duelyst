@@ -1,0 +1,9 @@
+.vercel/
+node_modules/
+_qa_*.png
+**/*.psd
+Duelyst-Sprites/
+export/
+world25d/
+.DS_Store
+Thumbs.db

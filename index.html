@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>2D Codex — Duelyst · Season 1 · GrudaWars</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<style>
+  :root {
+    --bg: #0a0810;
+    --panel: #14101c;
+    --ink: #f0e6d2;
+    --muted: #8e8270;
+    --line: #2a2434;
+    --gold: #e2c078;
+    --lyonar: #d8c06a; --songhai: #d14b4b; --vetruvian: #c9843a;
+    --abyssian: #7a5cff; --magmar: #3ecf7a; --vanar: #6ec8e8;
+    --neutral: #c4b8a4; --boss: #ff6b9d; --critter: #9aa; --other: #888;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; height: 100dvh; background: var(--bg); color: var(--ink);
+    font: 13px/1.4 "IBM Plex Mono", ui-monospace, Consolas, monospace; overflow: hidden;
+    -webkit-user-select: none; user-select: none; -webkit-user-drag: none; -webkit-touch-callout: none; }
+  input, select, textarea { -webkit-user-select: text; user-select: text; }
+  canvas, img, .card, .art, .viewport { -webkit-user-drag: none; user-select: none; }
+  ::selection { background: transparent; color: inherit; }
+  h1, h2, .display { font-family: Palatino, "Palatino Linotype", "Times New Roman", serif; font-weight: 700; letter-spacing: .04em; }
+  button, select, input { font: inherit; color: inherit; background: #1a1524; border: 1px solid var(--line);
+    padding: 7px 10px; border-radius: 2px; }
+  button { cursor: pointer; }
+  button:hover, button.on { border-color: var(--gold); color: var(--gold); }
+  input, select { width: 100%; min-width: 0; }
+
+  .app {
+    display: grid;
+    grid-template-columns: minmax(196px, 22vw) minmax(0, 1fr) minmax(280px, 34vw);
+    grid-template-rows: auto 1fr;
+    height: 100dvh;
+    padding-top: var(--safe-t);
+    padding-bottom: var(--safe-b);
+  }
+  .top {
+    grid-column: 1 / -1;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px;
+    padding: 10px 16px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #16111f, #0a0810);
+  }
+  .top h1 { margin: 0; font-size: clamp(22px, 3vw, 34px); color: var(--gold); font-style: italic; }
+  .top .stat { color: var(--muted); font-size: 11px; }
+  .src { display: flex; gap: 6px; flex-wrap: wrap; }
+  .src button { padding: 4px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+
+  .codex { overflow: auto; border-right: 1px solid var(--line); padding: 12px; min-width: 0; }
+  .codex h2 { font-size: 13px; color: var(--gold); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .16em; }
+  .chip { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; margin: 3px 0; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+  .roles { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; }
+  .roles button { padding: 3px 7px; font-size: 10px; }
+
+  .library {
+    overflow: auto; min-width: 0; min-height: 0;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(186px, 1fr));
+    grid-auto-rows: min-content;
+    gap: 14px;
+    align-content: start;
+    align-items: start;
+    background:
+      radial-gradient(1200px 400px at 50% -10%, #1c1630 0%, transparent 60%),
+      var(--bg);
+  }
+  .card {
+    aspect-ratio: 195 / 284;
+    width: 100%;
+    max-height: 420px;
+    background: #100c16;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-self: start;
+    box-shadow: 0 8px 24px #0008;
+  }
+  .card:hover, .card.sel { border-color: var(--fac, var(--gold)); box-shadow: 0 0 0 1px var(--fac, var(--gold)), 0 12px 28px #000a; }
+  .card .art {
+    flex: 1 1 auto;
+    width: 100%;
+    aspect-ratio: 195 / 284;
+    background: #07050c;
+    position: relative;
+    overflow: hidden;
+  }
+  .card .art canvas, .card .art img {
+    width: 100%; height: 100%; display: block; object-fit: contain;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+  .card .meta { padding: 8px 9px 10px; flex: 1; border-top: 1px solid #241c32; }
+  .card .name { font-family: Palatino, "Palatino Linotype", Georgia, serif; font-size: 16px; line-height: 1.15; color: var(--ink); }
+  .card .tag { color: var(--muted); font-size: 10px; margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; }
+
+  .inspect {
+    overflow: auto; min-width: 0; border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; background: #100d18;
+  }
+  .stage-row { display: flex; flex: 0 0 auto; align-items: stretch; gap: 0; min-height: 0; }
+  .viewport {
+    position: relative;
+    flex: 1 1 auto;
+    width: auto;
+    height: min(32vh, 300px);
+    min-height: 190px;
+    background:
+      linear-gradient(#0000, #0a0810 96%),
+      repeating-linear-gradient(90deg, #16121c 0 8px, #121018 8px 16px);
+  }
+  #breathe {
+    width: 100%; height: 100%; display: block;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+  }
+  .inspect .body { padding: 12px 14px 8px; flex: 0 0 auto; }
+  .inspect h2 { margin: 0 0 4px; font-size: clamp(22px, 2.4vw, 32px); color: var(--gold); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .row button { flex: 1 1 calc(33.33% - 6px); min-width: 72px; }
+  .abil { color: var(--muted); font-size: 11px; min-height: 2.4em; }
+  #face {
+    display: block; flex: 0 0 auto; width: 234px; height: 341px; margin: 8px 8px 8px 0;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background: #07050c; align-self: center;
+  }
+  .strips { flex: 1; min-height: 0; overflow: auto; padding: 0 10px 16px; border-top: 1px solid var(--line); }
+  .strip { margin: 10px 0; }
+  .strip-label { font-size: 10px; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+  .strip-frames { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+  .strip-frames canvas {
+    height: 64px; width: auto; flex: 0 0 auto; image-rendering: pixelated;
+    background: #07050c; cursor: pointer; border: 1px solid #2a2434;
+  }
+  .strip-frames canvas.on { border-color: var(--gold); }
+
+  @media (max-width: 980px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto minmax(240px, 42vh) auto minmax(0, 1fr);
+      height: 100dvh;
+    }
+    .top { grid-row: 1; }
+    .inspect { grid-row: 2; border-left: 0; border-bottom: 1px solid var(--line); }
+    .codex { grid-row: 3; border-right: 0; border-bottom: 1px solid var(--line); max-height: 22vh; }
+    .library { grid-row: 4; }
+    .viewport { height: 42vh; min-height: 220px; }
+  }
+  @media (max-width: 560px) {
+    .library { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+    .top h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>2D Codex</h1>
+    <div class="stat" id="stat">loading…</div>
+    <div class="src" id="src">
+      <button data-m="duelyst" class="on">Duelyst</button>
+      <button data-m="cards">Season 1</button>
+      <button data-m="heroes">GrudaWars</button>
+    </div>
+    <input id="q" placeholder="search name, role, faction…" style="max-width:280px" />
+    <button type="button" id="gridBtn">grid</button>
+  </header>
+  <nav class="codex">
+    <h2>Factions</h2>
+    <div id="factions"></div>
+    <h2 style="margin-top:16px">Roles</h2>
+    <div class="roles" id="roles"></div>
+    <h2 style="margin-top:16px">Sheet kit</h2>
+    <div class="roles" id="kits"></div>
+  </nav>
+  <section class="library" id="library"></section>
+  <aside class="inspect">
+    <div class="stage-row">
+      <div class="viewport"><canvas id="breathe"></canvas></div>
+      <canvas id="face" width="390" height="568" title="CraftPix TCG delivery face"></canvas>
+    </div>
+    <div class="body">
+      <h2 class="display" id="title">—</h2>
+      <div class="abil" id="abil"></div>
+      <select id="anim"></select>
+      <div class="row" id="animTabs"></div>
+      <div class="abil" id="fxNote"></div>
+      <div class="abil" id="commanderNote">Commander: your GROWERZ / THC Labz / Grudge cNFT sits on the castle and grants NFT passives. Not a deck card. Ribbon icons = melee · ranged · splash · flying · tank · charge (lit = this card).</div>
+    </div>
+    <div class="strips" id="strips"></div>
+  </aside>
+</div>
+<script type="module">
+import { parsePlist, groupAnims, orderedClips, clipLabel, kitOf, LOOP_CLIPS } from "/runtime/DuelystSprite.js";
+
+const FAC_COLOR = {
+  lyonar: "#d8c06a", songhai: "#d14b4b", vetruvian: "#c9843a", abyssian: "#7a5cff",
+  magmar: "#3ecf7a", vanar: "#6ec8e8", neutral: "#c4b8a4", boss: "#ff6b9d",
+  critter: "#99aaaa", other: "#888888",
+};
+const LOOK = {
+  lyonar: "Holy order — gold / white / blue, lions, knights.",
+  songhai: "Eastern empire — crimson, blades, mobility.",
+  vetruvian: "Desert — obelysks that spawn.",
+  abyssian: "Shadow host — swarm tokens, demons.",
+  magmar: "Magma beasts — Build grow ladders.",
+  vanar: "Ice tribes — vespyr, walls.",
+  neutral: "Mercs, tribals, golems, mechs.",
+  boss: "Gauntlet named bosses.",
+  critter: "Tiny filler.",
+};
+const FPS = 20;
+const STEP = 1000 / FPS;
+const LOCAL = ["127.0.0.1", "localhost"].includes(location.hostname);
+const INFO_VFX = LOCAL ? "/info-vfx" : "https://info.grudge-studio.com";
+const tcgLayout = await fetch("/tcg-chrome/LAYOUT.json").then((r) => r.json()).catch(() => null);
+const tcgBit = {};
+const CARD_FONT = (tcgLayout && tcgLayout.fonts && tcgLayout.fonts.stack)
+  || "Cambria, Constantia, Palatino Linotype, Palatino, Georgia, Times New Roman, serif";
+async function tcgSrc(rel) {
+  if (!rel) return null;
+  if (!tcgBit[rel]) {
+    const r = await fetch("/tcg-chrome/" + rel);
+    if (!r.ok) return null;
+    tcgBit[rel] = await createImageBitmap(await r.blob());
+  }
+  return tcgBit[rel];
+}
+async function preloadChrome() {
+  if (!tcgLayout) return;
+  const jobs = [];
+  for (let n = 0; n < 10; n++) jobs.push(tcgSrc(`numbers/${n}.png`));
+  jobs.push(tcgSrc("slots/crystal-mana.png"), tcgSrc("slots/crystal-attack.png"), tcgSrc("slots/crystal-health.png"));
+  await Promise.all(jobs);
+}
+await preloadChrome();
+
+function faceStats(u) {
+  const keys = u.keywords || u.abilities || [];
+  const range = u.range ?? "Melee";
+  const speed = u.speed ?? "Medium";
+  const effect = u.effect || "Slash";
+  const passive = u.passive || u.abilityText || u.text || "";
+  const rangeBit = range === "Melee" || range === "—" ? `RNG ${range}` : `RNG ${range}`;
+  return {
+    cost: u.cost ?? 3,
+    attack: u.attack ?? 3,
+    health: u.health ?? 4,
+    range,
+    speed,
+    effect,
+    passive,
+    keywords: keys,
+    playStyles: u.playStyles || [],
+    kindLine: (u.kind || "troop").toUpperCase(),
+    metaLine: `${rangeBit}  ·  SPD ${speed}  ·  ${String(effect).toUpperCase()}`,
+    vfx: u.vfx || {},
+  };
+}
+
+function strokeText(ctx, s, x, y, size, fill, stroke) {
+  ctx.font = `bold ${size}px ${CARD_FONT}`;
+  ctx.lineJoin = "round";
+  ctx.miterLimit = 2;
+  ctx.strokeStyle = stroke || "#140c08";
+  ctx.lineWidth = Math.max(3, size / 3.2);
+  ctx.fillStyle = fill || "#fff4d6";
+  ctx.strokeText(s, x, y);
+  ctx.fillText(s, x, y);
+}
+
+function fitName(ctx, text, maxW, size) {
+  let s = size;
+  ctx.font = `bold ${s}px ${CARD_FONT}`;
+  while (s > 8 && ctx.measureText(text).width > maxW) {
+    s -= 0.5;
+    ctx.font = `bold ${s}px ${CARD_FONT}`;
+  }
+  return s;
+}
+
+function drawNumber(ctx, n, cx, cy, h) {
+  const s = String(n ?? "");
+  const bits = [...s].map((d) => tcgBit[`numbers/${d}.png`]);
+  if (!bits.length || bits.some((b) => !b)) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    strokeText(ctx, s, cx, cy + 1, h || 14, "#fffef6", "#1a1008");
+    return;
+  }
+  const hgt = h || 14;
+  const wds = bits.map((b) => hgt * (b.width / b.height));
+  const total = wds.reduce((a, b) => a + b, 0) + Math.max(0, bits.length - 1);
+  let x = cx - total / 2;
+  bits.forEach((b, i) => {
+    ctx.drawImage(b, x, cy - hgt / 2, wds[i], hgt);
+    x += wds[i] + 1;
+  });
+}
+
+function drawGem(ctx, gem, n) {
+  if (!gem) return;
+  const icon = gem.icon && tcgBit[gem.icon];
+  const r = gem.r || 15;
+  if (icon) {
+    const s = r * 2 + 4;
+    ctx.drawImage(icon, gem.cx - s / 2, gem.cy - s / 2, s, s);
+  } else {
+    ctx.beginPath();
+    ctx.arc(gem.cx, gem.cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = gem.fill;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#1a1008";
+    ctx.stroke();
+  }
+  drawNumber(ctx, n, gem.cx, gem.cy, gem.size || 14);
+}
+
+function wrapLines(ctx, text, maxW) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? cur + " " + w : w;
+    if (cur && ctx.measureText(next).width > maxW) { lines.push(cur); cur = w; }
+    else cur = next;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+let tintScratch = null;
+function clipTint(animKey, frameI, total) {
+  const k = String(animKey || "");
+  const t = total > 1 ? frameI / (total - 1) : 0.55;
+  const pulse = 0.22 + 0.5 * Math.sin(Math.max(0, Math.min(1, t)) * Math.PI);
+  if (k === "hit") return `rgba(255, 48, 42, ${0.32 + pulse})`;
+  if (k === "death" || k === "death2") return `rgba(180, 20, 28, ${0.22 + pulse * 0.55})`;
+  if (k === "attack" || k === "projectile") return `rgba(255, 168, 36, ${0.22 + pulse * 0.7})`;
+  if (k.startsWith("cast") || k === "explode") return `rgba(255, 210, 80, ${0.18 + pulse * 0.55})`;
+  return null;
+}
+
+function drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, tint) {
+  const o = 1;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.filter = "brightness(0)";
+  for (const [ox, oy] of [[-o, 0], [o, 0], [0, -o], [0, o]]) {
+    ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, dx + ox, dy + oy, dw, dh);
+  }
+  ctx.filter = "none";
+  ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, dx, dy, dw, dh);
+  if (tint) {
+    if (!tintScratch) tintScratch = document.createElement("canvas");
+    const tw = Math.max(1, Math.ceil(dw));
+    const th = Math.max(1, Math.ceil(dh));
+    if (tintScratch.width !== tw) tintScratch.width = tw;
+    if (tintScratch.height !== th) tintScratch.height = th;
+    const tctx = tintScratch.getContext("2d");
+    tctx.imageSmoothingEnabled = false;
+    tctx.globalCompositeOperation = "source-over";
+    tctx.clearRect(0, 0, tw, th);
+    tctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, dw, dh);
+    tctx.globalCompositeOperation = "source-atop";
+    tctx.fillStyle = tint;
+    tctx.fillRect(0, 0, tw, th);
+    tctx.globalCompositeOperation = "source-over";
+    ctx.drawImage(tintScratch, dx, dy);
+  }
+  ctx.restore();
+}
+
+function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
+  if (!ctx || !unit || !tcgLayout) return;
+  const L = tcgLayout;
+  const fac = unit.faction || "other";
+  const stats = faceStats(unit);
+  ctx.imageSmoothingEnabled = false;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const scale = ctx.canvas.width / 195;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  const bg = tcgBit[L.factionBg[fac] || L.factionBg.other];
+  const frame = tcgBit[L.factionFrame[fac] || L.factionFrame.other];
+  const art = L.art;
+  if (bg) ctx.drawImage(bg, art.x, art.y, art.w, art.h);
+  const frs = pack && (pack.anims[animKey] || pack.anims.breathing || pack.anims.idle) || [];
+  const fr = frs[frameI] || frs[0];
+  if (pack && fr) {
+    const s = Math.min(art.w / fr.w, art.h / fr.h) * 0.98;
+    const dw = fr.w * s, dh = fr.h * s;
+    const dx = art.x + (art.w - dw) / 2;
+    const dy = art.y + art.h - dh;
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.beginPath();
+    ctx.ellipse(art.x + art.w / 2, art.y + art.h - 6, dw * 0.28, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    drawOutlinedSprite(ctx, pack.img, fr, dx, dy, dw, dh, clipTint(animKey, frameI, frs.length));
+  }
+  if (frame) ctx.drawImage(frame, 0, 0, 195, 284);
+  const nm = L.name;
+  const fonts = L.fonts || { name: 12, kind: 9, body: 10, gem: 14 };
+  if (nm) {
+    const label = String(unit.name || "");
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const ns = fitName(ctx, label, nm.w - 4, fonts.name);
+    strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff6d2", "#120a06");
+  }
+  const onKeys = new Set((stats.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(stats.keywords || []));
+  for (const slot of L.playStyles || []) {
+    const on = onKeys.has(slot.key);
+    ctx.save();
+    ctx.globalAlpha = on ? 1 : 0.18;
+    const badge = tcgBit[slot.badge];
+    if (badge) ctx.drawImage(badge, slot.x - 1, slot.y - 1, slot.w + 2, slot.h + 2);
+    const ic = tcgBit[slot.icon];
+    if (ic) ctx.drawImage(ic, slot.x, slot.y, slot.w, slot.h);
+    ctx.restore();
+  }
+  const t = L.text;
+  if (t) {
+    const cx = t.x + t.w / 2;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const kindSize = fonts.kind || 8;
+    const metaSize = fonts.meta || 8;
+    const bodySize = fonts.body || 9;
+    let yy = t.y + 8;
+    strokeText(ctx, String(stats.kindLine || "TROOP"), cx, yy, kindSize, "#5a220e", "#f4e6c4");
+    yy += kindSize + 6;
+    ctx.font = `bold ${metaSize}px ${CARD_FONT}`;
+    let ms = metaSize;
+    ctx.font = `bold ${ms}px ${CARD_FONT}`;
+    while (ms > 6 && ctx.measureText(String(stats.metaLine || "")).width > t.w - 8) {
+      ms -= 0.5;
+      ctx.font = `bold ${ms}px ${CARD_FONT}`;
+    }
+    strokeText(ctx, String(stats.metaLine || ""), cx, yy, ms, "#1a120c", "#f7edd4");
+    yy += ms + 7;
+    const body = String(stats.passive || "").trim();
+    ctx.font = `bold ${bodySize}px ${CARD_FONT}`;
+    const maxH = t.y + t.h - 2;
+    for (const line of wrapLines(ctx, body, t.w - 8).slice(0, 2)) {
+      if (yy + bodySize > maxH) break;
+      strokeText(ctx, line, cx, yy, bodySize, "#140c08", "#f7edd4");
+      yy += bodySize + 3;
+    }
+  }
+  drawGem(ctx, L.stats && L.stats.cost, stats.cost);
+  drawGem(ctx, L.stats && L.stats.attack, stats.attack);
+  drawGem(ctx, L.stats && L.stats.health, stats.health);
+  if (showGrid) {
+    ctx.strokeStyle = "rgba(255,226,122,0.35)";
+    ctx.lineWidth = 0.5;
+    const step = (L.grid && L.grid.step) || 13;
+    for (let x = 0; x <= 195; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 284); ctx.stroke();
+    }
+    for (let y = 0; y <= 284; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(195, y); ctx.stroke();
+    }
+  }
+}
+
+function drawFace() {
+  const pack = current && packs.get(current.id);
+  const c = document.getElementById("face");
+  if (!c || !pack || !tcgLayout) return;
+  paintCard(c.getContext("2d"), current, pack, playing.key, playing.i, !!window.__cardGrid);
+}
+
+const [cat, duel] = await Promise.all([
+  fetch(LOCAL ? "/api/catalog" : "/catalog/catalog.json").then((r) => r.json()),
+  fetch(LOCAL ? "/api/duelyst" : "/catalog/duelyst-index.json").then((r) => r.json()),
+]);
+const heroes = cat.heroes || [];
+const cards = cat.cards || [];
+const units = duel.units || [];
+document.getElementById("stat").textContent =
+  `${units.length} Duelyst · ${cat.cardCount} Season 1 · ${cat.heroCount} GrudaWars`;
+
+let mode = "duelyst";
+let faction = "lyonar";
+let role = "all";
+let kit = "all";
+let q = "";
+let current = units.find((u) => u.role === "general" && u.faction === "lyonar") || units[0];
+const packs = new Map();
+const playing = { key: "breathing", i: 0, acc: 0, loop: true };
+const overlay = { kind: null, frames: [], i: 0, on: false };
+const fxSheets = {};
+const SLASH_BY_FACTION = {
+  lyonar: "slashBlueLg",
+  songhai: "slashRedLg",
+  vetruvian: "slashOrangeLg",
+  abyssian: "slashPurpleLg",
+  magmar: "slashOrangeLg",
+  vanar: "slashBlueLg",
+  boss: "arcaneslash",
+  neutral: "slashGreenLg",
+  critter: "slashGreenLg",
+  other: "slashRedLg",
+};
+let vfxCatalog = null;
+fetch(INFO_VFX + "/api/v1/effectSprites.json")
+  .then((r) => r.json())
+  .then((j) => { vfxCatalog = j.effects || {}; })
+  .catch(() => {});
+
+function sheetFrames(img, def) {
+  const n = def.frames || 8;
+  const cols = def.cols || Math.round(Math.sqrt(n));
+  const rows = def.rows || Math.ceil(n / cols);
+  const fw = def.frameW || (def.size ? def.size / cols : img.width / cols);
+  const fh = def.frameH || (def.size ? def.size / rows : img.height / rows);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    out.push({ img, x: c * fw, y: r * fh, w: fw, h: fh });
+  }
+  return out;
+}
+
+async function loadInfoFx(key) {
+  if (fxSheets[key]) return fxSheets[key];
+  if (!vfxCatalog) {
+    try {
+      const j = await (await fetch(INFO_VFX + "/api/v1/effectSprites.json")).json();
+      vfxCatalog = j.effects || {};
+    } catch { return []; }
+  }
+  const def = vfxCatalog && vfxCatalog[key];
+  if (!def || !def.src) return [];
+  const r = await fetch(INFO_VFX + def.src);
+  if (!r.ok) return [];
+  const img = await createImageBitmap(await r.blob());
+  fxSheets[key] = sheetFrames(img, def);
+  return fxSheets[key];
+}
+
+function filtered() {
+  if (mode === "cards") {
+    return cards.filter((c) => !q || `${c.name} ${c.rarity} ${(c.abilities || []).join(" ")}`.toLowerCase().includes(q));
+  }
+  if (mode === "heroes") {
+    return heroes.filter((h) => !q || h.name.toLowerCase().includes(q));
+  }
+  return units.filter((u) => {
+    if (faction !== "all" && u.faction !== faction) return false;
+    if (role !== "all" && u.role !== role) return false;
+    if (kit !== "all" && !(u.kits || []).includes(kit)) return false;
+    if (q && !`${u.id} ${u.name} ${u.role} ${u.faction} ${(u.clips || []).join(" ")}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function paintCodex() {
+  const facs = [["all", units.length], ...Object.entries(duel.factions || {})];
+  document.getElementById("factions").innerHTML = facs.map(([f, n]) =>
+    `<button class="chip ${f === faction ? "on" : ""}" data-f="${f}">
+      <span><i class="dot" style="background:${FAC_COLOR[f] || "#888"}"></i>${f}</span>
+      <span>${n}</span></button>`
+  ).join("");
+  const roles = ["all", ...[...new Set(units.map((u) => u.role))]];
+  document.getElementById("roles").innerHTML = roles.map((r) =>
+    `<button class="${r === role ? "on" : ""}" data-r="${r}">${r}</button>`
+  ).join("");
+  const kitBtns = [
+    ["all", "all"],
+    ["core", "core"],
+    ["caster", "caster"],
+    ["projectile", "projectile"],
+    ["special", "special"],
+  ];
+  document.getElementById("kits").innerHTML = kitBtns.map(([k, lab]) =>
+    `<button class="${k === kit ? "on" : ""}" data-k="${k}">${lab}</button>`
+  ).join("");
+}
+
+function renderLibrary() {
+  const list = filtered();
+  const lib = document.getElementById("library");
+  lib.innerHTML = list.map((item) => {
+    if (mode === "duelyst") {
+      const col = FAC_COLOR[item.faction] || varGold();
+      const on = current && current.id === item.id ? "sel" : "";
+      return `<article class="card ${on}" data-id="${item.id}" style="--fac:${col}">
+        <div class="art"><canvas data-id="${item.id}" width="390" height="568"></canvas></div></article>`;
+    }
+    if (mode === "cards") {
+      const on = current && current.id === item.id ? "sel" : "";
+      return `<article class="card ${on}" data-id="${item.id}">
+        <div class="art"><img src="${item.image || ""}" alt="" /></div>
+        <div class="meta"><div class="name">${esc(item.name)}</div>
+        <div class="tag">${item.rarity || ""} · ${(item.abilities || []).slice(0, 2).join(" · ")}</div></div></article>`;
+    }
+    return `<article class="card" data-id="${item.id}">
+      <div class="art"><img src="${(item.clips && (item.clips.idle || item.clips.attack1)) || ""}" alt="" /></div>
+      <div class="meta"><div class="name">${esc(item.name)}</div>
+      <div class="tag">${Object.keys(item.clips || {}).join(" · ")}</div></div></article>`;
+  }).join("") || `<div class="tag">no matches</div>`;
+  if (mode === "duelyst") observeCards();
+}
+
+function varGold() { return "#e2c078"; }
+function esc(s) { return String(s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+const io = new IntersectionObserver((ents) => {
+  for (const e of ents) {
+    if (!e.isIntersecting) continue;
+    const id = e.target.dataset.id;
+    const u = units.find((x) => x.id === id);
+    if (u) loadPack(u).then(() => drawCard(id)).catch(() => {});
+  }
+}, { root: document.getElementById("library"), rootMargin: "80px" });
+
+function observeCards() {
+  io.disconnect();
+  document.querySelectorAll(".card[data-id]").forEach((el) => io.observe(el));
+}
+
+const inflight = new Map();
+let gate = 0;
+const waiters = [];
+async function slot() {
+  if (gate < 3) { gate += 1; return; }
+  await new Promise((r) => waiters.push(r));
+  gate += 1;
+}
+function release() {
+  gate = Math.max(0, gate - 1);
+  const n = waiters.shift();
+  if (n) n();
+}
+
+async function loadPack(u) {
+  if (packs.has(u.id)) return packs.get(u.id);
+  if (inflight.has(u.id)) return inflight.get(u.id);
+  const job = (async () => {
+    await slot();
+    try {
+      const xml = await fetch(u.plist).then((r) => r.text());
+      const img = await createImageBitmap(await (await fetch(u.sheet)).blob());
+      const pack = { img, anims: groupAnims(parsePlist(xml)), unit: u };
+      packs.set(u.id, pack);
+      return pack;
+    } finally {
+      inflight.delete(u.id);
+      release();
+    }
+  })();
+  inflight.set(u.id, job);
+  return job;
+}
+
+function preferAnim(anims) {
+  const names = orderedClips(anims);
+  return ["breathing", "idle", "run", "attack"].find((k) => names.includes(k)) || names[0];
+}
+
+function drawFit(ctx, img, fr, w, h, animKey, frameI, frameCount) {
+  ctx.clearRect(0, 0, w, h);
+  if (!fr || !img) return;
+  ctx.imageSmoothingEnabled = false;
+  const pad = Math.round(Math.min(w, h) * 0.06);
+  const s = Math.min((w - pad * 2) / fr.w, (h - pad * 2) / fr.h);
+  const dw = fr.w * s, dh = fr.h * s;
+  const dx = (w - dw) / 2;
+  const dy = h - pad - dh;
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.beginPath();
+  ctx.ellipse(w / 2, h - pad * 0.4, dw * 0.28, Math.max(6, dh * 0.06), 0, 0, Math.PI * 2);
+  ctx.fill();
+  drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, clipTint(animKey, frameI, frameCount));
+}
+
+function sizeBreathe() {
+  const c = document.getElementById("breathe");
+  const box = c.parentElement.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.max(64, Math.floor(box.width * dpr));
+  c.height = Math.max(64, Math.floor(box.height * dpr));
+}
+
+function drawCard(id) {
+  const pack = packs.get(id);
+  const canvas = document.querySelector(`canvas[data-id="${id}"]`);
+  const unit = units.find((u) => u.id === id);
+  if (!pack || !canvas || !unit) return;
+  paintCard(canvas.getContext("2d"), unit, pack, preferAnim(pack.anims), 0, false);
+}
+
+function drawStage() {
+  const pack = current && packs.get(current.id);
+  const c = document.getElementById("breathe");
+  const ctx = c.getContext("2d");
+  if (!pack) { ctx.clearRect(0, 0, c.width, c.height); return; }
+  const frames = pack.anims[playing.key] || pack.anims.breathing || pack.anims.idle || [];
+  if (!frames.length) return;
+  if (playing.i >= frames.length) playing.i = playing.loop ? 0 : frames.length - 1;
+  drawFit(ctx, pack.img, frames[playing.i], c.width, c.height, playing.key, playing.i, frames.length);
+  if (overlay.on) {
+    if (overlay.kind === "plist") {
+      const fr = overlay.frames[overlay.i];
+      if (fr) {
+        const pad = Math.round(Math.min(c.width, c.height) * 0.06);
+        const s = Math.min((c.width - pad * 2) / fr.w, (c.height - pad * 2) / fr.h) * 0.7;
+        const dw = fr.w * s, dh = fr.h * s;
+        ctx.drawImage(pack.img, fr.x, fr.y, fr.w, fr.h, c.width * 0.52, c.height - pad - dh * 0.85, dw, dh);
+      }
+    } else if (overlay.kind === "png" && overlay.frames[overlay.i]) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const im = overlay.frames[overlay.i];
+      const dw = c.width * 0.62, dh = c.height * 0.62;
+      ctx.drawImage(im, c.width * 0.32, c.height * 0.18, dw, dh);
+      ctx.restore();
+    } else if (overlay.kind === "sheet") {
+      const fr = overlay.frames[overlay.i];
+      if (fr) {
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        const s = Math.min(c.width / fr.w, c.height / fr.h) * 0.92;
+        const dw = fr.w * s, dh = fr.h * s;
+        ctx.drawImage(fr.img, fr.x, fr.y, fr.w, fr.h, (c.width - dw) / 2, (c.height - dh) * 0.35, dw, dh);
+        ctx.restore();
+      }
+    }
+  }
+}
+
+function markStrip() {
+  document.querySelectorAll(".strip-frames canvas").forEach((c) => {
+    const on = c.dataset.anim === playing.key && +c.dataset.i === playing.i;
+    c.classList.toggle("on", on);
+  });
+  document.querySelectorAll("#animTabs button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.anim === playing.key);
+  });
+}
+
+function paintAnimTabs(pack) {
+  const el = document.getElementById("animTabs");
+  if (!el || !pack) return;
+  const names = orderedClips(pack.anims);
+  el.innerHTML = names.map((name) =>
+    `<button type="button" data-anim="${name}" class="${name === playing.key ? "on" : ""}">${clipLabel(name)}</button>`
+  ).join("");
+}
+
+function renderStrips(pack) {
+  const el = document.getElementById("strips");
+  if (!el || !pack) return;
+  const names = orderedClips(pack.anims);
+  el.innerHTML = names.map((name) => {
+    const frames = pack.anims[name] || [];
+    return `<div class="strip" data-anim="${name}">
+      <div class="strip-label">${clipLabel(name)} · ${frames.length} frames · ${name}</div>
+      <div class="strip-frames">${frames.map((fr, i) =>
+        `<canvas data-anim="${name}" data-i="${i}" width="${fr.w}" height="${fr.h}" title="${clipLabel(name)} ${i + 1}/${frames.length}"></canvas>`
+      ).join("")}</div>
+    </div>`;
+  }).join("") || `<div class="abil">no frames</div>`;
+  for (const c of el.querySelectorAll("canvas")) {
+    const fr = pack.anims[c.dataset.anim][+c.dataset.i];
+    if (!fr) continue;
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.drawImage(pack.img, fr.x, fr.y, fr.w, fr.h, 0, 0, c.width, c.height);
+  }
+  markStrip();
+}
+
+async function selectUnit(u) {
+  if (!u) return;
+  current = u;
+  document.getElementById("title").textContent = u.name;
+  document.getElementById("abil").textContent =
+    `${u.faction} · ${u.role}${LOOK[u.faction] ? " — " + LOOK[u.faction] : ""} · ${(u.anims || []).join(" · ")}`;
+  document.querySelectorAll(".card").forEach((el) => el.classList.toggle("sel", el.dataset.id === u.id));
+  const pack = await loadPack(u);
+  const names = orderedClips(pack.anims);
+  playing.key = preferAnim(pack.anims);
+  playing.i = 0;
+  playing.loop = LOOP_CLIPS.has(playing.key);
+  document.getElementById("title").textContent = u.name;
+  document.getElementById("abil").textContent =
+    `${u.faction} · ${u.role}${LOOK[u.faction] ? " — " + LOOK[u.faction] : ""} · ${names.map(clipLabel).join(" · ")}`;
+  document.getElementById("anim").innerHTML = names.map((n) =>
+    `<option value="${n}" ${n === playing.key ? "selected" : ""}>${clipLabel(n)} (${pack.anims[n].length})</option>`
+  ).join("");
+  sizeBreathe();
+  paintAnimTabs(pack);
+  renderStrips(pack);
+  const fac = u.faction || "other";
+  if (tcgLayout) {
+    await tcgSrc(tcgLayout.factionBg[fac] || tcgLayout.factionBg.other);
+    await tcgSrc(tcgLayout.factionFrame[fac] || tcgLayout.factionFrame.other);
+    for (const slot of tcgLayout.playStyles || []) {
+      await tcgSrc(slot.icon);
+      await tcgSrc(slot.badge);
+    }
+    await tcgSrc("slots/badge-frame.png");
+    for (let n = 0; n < 10; n++) await tcgSrc(`numbers/${n}.png`);
+  }
+  drawStage();
+  drawFace();
+  drawCard(u.id);
+  const note = document.getElementById("fxNote");
+  if (note) {
+    const extra = names.filter((n) => !["breathing", "idle", "run", "attack", "hit", "death"].includes(n));
+    note.textContent = extra.length
+      ? `Sheet extras (this unit): ${extra.map(clipLabel).join(" · ")}. Tabs are plist clips from the original packed sheet — not invented attack 2/3.`
+      : "This sheet is the core kit: breathe · idle · run · attack · hit · death. No extra Unity clips on this unit.";
+  }
+}
+
+function playKey(key) {
+  const pack = current && packs.get(current.id);
+  if (!pack) return;
+  const names = Object.keys(pack.anims);
+  const k = names.includes(key) ? key : preferAnim(pack.anims);
+  playing.key = k;
+  playing.i = 0;
+  playing.loop = LOOP_CLIPS.has(k);
+  overlay.on = false;
+  const sel = document.getElementById("anim");
+  if (sel) sel.value = k;
+  markStrip();
+}
+
+function startOverlay(kind, frames) {
+  if (!frames || !frames.length) { overlay.on = false; return; }
+  overlay.kind = kind;
+  overlay.frames = frames;
+  overlay.i = 0;
+  overlay.on = true;
+}
+
+let last = 0;
+function loop(t) {
+  requestAnimationFrame(loop);
+  if (t - last < STEP) return;
+  last = t;
+  const pack = current && packs.get(current.id);
+  if (!pack) return;
+  const frames = pack.anims[playing.key] || [];
+  if (frames.length > 1) {
+    playing.i += 1;
+    if (playing.i >= frames.length) playing.i = playing.loop ? 0 : frames.length - 1;
+  }
+  if (overlay.on) {
+    overlay.i += 1;
+    if (overlay.i >= overlay.frames.length) overlay.on = false;
+  }
+  drawStage();
+  drawFace();
+  markStrip();
+}
+requestAnimationFrame(loop);
+
+document.getElementById("src").onclick = (e) => {
+  const b = e.target.closest("button[data-m]");
+  if (!b) return;
+  mode = b.dataset.m;
+  document.querySelectorAll("#src button").forEach((x) => x.classList.toggle("on", x === b));
+  if (mode === "duelyst") current = units.find((u) => u.role === "general" && (faction === "all" || u.faction === faction)) || filtered()[0];
+  else current = filtered()[0];
+  renderLibrary();
+  if (mode === "duelyst" && current) selectUnit(current);
+  else if (mode === "cards" && current) {
+    document.getElementById("title").textContent = current.name;
+    document.getElementById("abil").textContent = (current.abilities || []).join(" · ");
+  }
+};
+document.getElementById("factions").onclick = (e) => {
+  const b = e.target.closest("button[data-f]");
+  if (!b) return;
+  faction = b.dataset.f;
+  paintCodex();
+  current = units.find((u) => (faction === "all" || u.faction === faction) && u.role === "general") || filtered()[0];
+  renderLibrary();
+  if (current) selectUnit(current);
+};
+document.getElementById("roles").onclick = (e) => {
+  const b = e.target.closest("button[data-r]");
+  if (!b) return;
+  role = b.dataset.r;
+  paintCodex();
+  renderLibrary();
+};
+document.getElementById("kits").onclick = (e) => {
+  const b = e.target.closest("button[data-k]");
+  if (!b) return;
+  kit = b.dataset.k;
+  paintCodex();
+  renderLibrary();
+};
+document.getElementById("q").oninput = (e) => { q = e.target.value.toLowerCase(); renderLibrary(); };
+document.getElementById("library").onclick = (e) => {
+  const card = e.target.closest(".card[data-id]");
+  if (!card) return;
+  if (mode === "duelyst") selectUnit(units.find((u) => u.id === card.dataset.id));
+  else if (mode === "cards") {
+    current = cards.find((c) => c.id === card.dataset.id);
+    document.getElementById("title").textContent = current.name;
+    document.getElementById("abil").textContent = (current.abilities || []).join(" · ") + " — " + (current.abilityDesc || "");
+  } else {
+    current = heroes.find((h) => h.id === card.dataset.id);
+    document.getElementById("title").textContent = current.name;
+  }
+  document.querySelectorAll(".card").forEach((el) => el.classList.toggle("sel", el === card));
+};
+document.getElementById("anim").onchange = (e) => {
+  playKey(e.target.value);
+};
+document.getElementById("animTabs").onclick = (e) => {
+  const b = e.target.closest("button[data-anim]");
+  if (!b) return;
+  playKey(b.dataset.anim);
+};
+document.getElementById("strips").onclick = (e) => {
+  const c = e.target.closest("canvas[data-anim]");
+  if (!c) return;
+  playKey(c.dataset.anim);
+  playing.i = +c.dataset.i;
+  playing.loop = false;
+  drawStage();
+  drawFace();
+  markStrip();
+};
+
+document.getElementById("gridBtn").onclick = (e) => {
+  window.__cardGrid = !window.__cardGrid;
+  e.target.classList.toggle("on", !!window.__cardGrid);
+  drawFace();
+};
+window.addEventListener("resize", () => { sizeBreathe(); drawStage(); drawFace(); });
+
+paintCodex();
+renderLibrary();
+sizeBreathe();
+if (current) await selectUnit(current);
+for (const u of filtered().slice(0, 16)) {
+  loadPack(u).then(() => drawCard(u.id)).catch(() => {});
+}
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    drawFace();
+    for (const u of filtered().slice(0, 24)) drawCard(u.id);
+  });
+}
+
+function allowTextField(el) {
+  return el && el.closest && el.closest("input, textarea, select");
+}
+document.addEventListener("contextmenu", (e) => {
+  if (!allowTextField(e.target)) e.preventDefault();
+});
+document.addEventListener("dragstart", (e) => e.preventDefault());
+document.addEventListener("copy", (e) => {
+  if (!allowTextField(e.target)) e.preventDefault();
+});
+document.addEventListener("cut", (e) => {
+  if (!allowTextField(e.target)) e.preventDefault();
+});
+document.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (!e.ctrlKey && !e.metaKey) return;
+  if (allowTextField(e.target) && (k === "c" || k === "x" || k === "a")) return;
+  if (k === "c" || k === "x" || k === "s" || k === "u" || k === "p") e.preventDefault();
+});
+</script>
+</body>
+</html>

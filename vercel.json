@@ -1,0 +1,32 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/info-vfx/:path*",
+      "destination": "https://info.grudge-studio.com/:path*"
+    },
+    {
+      "source": "/duelyst/:path*",
+      "destination": "https://assets.grudge-studio.com/sprites/duelyst/:path*"
+    },
+    {
+      "source": "/rpg-maker-studio",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!catalog/|tcg-chrome/|runtime/|api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

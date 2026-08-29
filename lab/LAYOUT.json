@@ -1,0 +1,78 @@
+{
+  "card": {
+    "w": 195,
+    "h": 284
+  },
+  "name": { "x": 10, "y": 6, "w": 148, "h": 24, "size": 13 },
+  "art": {
+    "x": 31,
+    "y": 48,
+    "w": 132,
+    "h": 112
+  },
+  "ribbon": {
+    "x": 16,
+    "y": 170,
+    "w": 163,
+    "h": 20
+  },
+  "stats": {
+    "cost": { "cx": 176, "cy": 18, "r": 15, "fill": "#3a7bd9", "label": "COST", "size": 14, "icon": "slots/crystal-mana.png" },
+    "attack": { "cx": 26, "cy": 268, "r": 16, "fill": "#c9a227", "label": "ATK", "size": 14, "icon": "slots/crystal-attack.png" },
+    "health": { "cx": 170, "cy": 268, "r": 16, "fill": "#2f9e4f", "label": "HP", "size": 14, "icon": "slots/crystal-health.png" }
+  },
+  "fonts": {
+    "name": 13,
+    "kind": 8,
+    "meta": 8,
+    "body": 9,
+    "gem": 14,
+    "stack": "Cambria, Constantia, Palatino Linotype, Palatino, Georgia, Times New Roman, serif"
+  },
+  "playStyles": [
+    { "key": "melee", "x": 18, "y": 171, "w": 16, "h": 16, "icon": "slots/attack.png", "badge": "slots/badge-attack.png" },
+    { "key": "ranged", "x": 36, "y": 171, "w": 16, "h": 16, "icon": "slots/mana.png", "badge": "slots/badge-mana.png" },
+    { "key": "splash", "x": 54, "y": 171, "w": 16, "h": 16, "icon": "slots/ability.png", "badge": "slots/badge-ability.png" },
+    { "key": "flying", "x": 124, "y": 171, "w": 16, "h": 16, "icon": "slots/rarity.png", "badge": "slots/badge-rarity.png" },
+    { "key": "tank", "x": 142, "y": 171, "w": 16, "h": 16, "icon": "slots/type.png", "badge": "slots/badge-type.png" },
+    { "key": "charge", "x": 160, "y": 171, "w": 16, "h": 16, "icon": "slots/health.png", "badge": "slots/badge-health.png" }
+  ],
+  "text": {
+    "x": 18,
+    "y": 196,
+    "w": 159,
+    "h": 56
+  },
+  "grid": { "step": 13, "on": false },
+  "factionFrame": {
+    "lyonar": "frames/lyonar.png",
+    "songhai": "frames/songhai.png",
+    "vetruvian": "frames/vetruvian.png",
+    "abyssian": "frames/abyssian.png",
+    "magmar": "frames/magmar.png",
+    "vanar": "frames/vanar.png",
+    "neutral": "frames/neutral.png",
+    "boss": "frames/boss.png",
+    "critter": "frames/critter.png",
+    "other": "frames/other.png"
+  },
+  "factionBg": {
+    "lyonar": "backgrounds/lyonar.png",
+    "songhai": "backgrounds/songhai.png",
+    "vetruvian": "backgrounds/vetruvian.png",
+    "abyssian": "backgrounds/abyssian.png",
+    "magmar": "backgrounds/magmar.png",
+    "vanar": "backgrounds/vanar.png",
+    "neutral": "backgrounds/neutral.png",
+    "boss": "backgrounds/boss.png",
+    "critter": "backgrounds/critter.png",
+    "other": "backgrounds/other.png"
+  },
+  "not": [
+    "Nexus Nemesis",
+    "CraftPix filenames in delivery",
+    "second bag"
+  ],
+  "numbers": "numbers/{n}.png",
+  "font": "Cambria / Palatino — name centered in banner (outlined), parchment centered: kind + RNG/SPD/FX + passive"
+}
