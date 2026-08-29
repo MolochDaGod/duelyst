@@ -21,11 +21,19 @@
       "destination": "https://assets.grudge-studio.com/sprites/duelyst/:path*"
     },
     {
+      "source": "/gw/:path*",
+      "destination": "https://assets.grudge-studio.com/sprites/grudawars/:path*"
+    },
+    {
+      "source": "/card-art/:path*",
+      "destination": "https://battle.thc-labz.xyz/card-art/:path*"
+    },
+    {
       "source": "/rpg-maker-studio",
       "destination": "/index.html"
     },
     {
-      "source": "/((?!catalog/|tcg-chrome/|runtime/|api/).*)",
+      "source": "/((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/).*)",
       "destination": "/index.html"
     }
   ]

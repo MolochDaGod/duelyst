@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { clashAbility } from "../duelyst/clash-abilities.mjs";
 import { kitOf, clipsFromPlistXml } from "../duelyst/runtime/DuelystSprite.js";
+import { flattenCityPve } from "./pve-roster.mjs";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG = JSON.parse(fs.readFileSync(path.join(ROOT, "catalog.json"), "utf8"));
@@ -119,15 +120,24 @@ const server = http.createServer((req, res) => {
   const u = new URL(req.url, "http://127.0.0.1");
   const p = u.pathname;
   if (p === "/" || p === "/rpg-maker-studio") return file(res, path.join(ROOT, "showcase.html"));
-  if (p === "/api/catalog") return send(res, 200, JSON.stringify({
-    heroCount: CATALOG.heroCount,
-    duelystUnits: CATALOG.duelystUnitCount || CATALOG.duelystUnits,
-    fxCount: CATALOG.fxCount,
-    cardCount: CATALOG.cardCount,
-    d1: CATALOG.d1Target,
-  }));
+  if (p === "/api/catalog") {
+    const pve = flattenCityPve();
+    return send(res, 200, JSON.stringify({
+      heroCount: (CATALOG.heroes || []).length,
+      duelystUnits: CATALOG.duelystUnitCount || CATALOG.duelystUnits,
+      fxCount: CATALOG.fxCount,
+      cardCount: pve.length || CATALOG.cardCount,
+      d1: CATALOG.d1Target,
+      heroes: CATALOG.heroes || [],
+      cards: pve.length ? pve : (CATALOG.cards || []),
+      cities: [...new Set(pve.map((c) => c.city))],
+    }));
+  }
   if (p === "/api/heroes") return send(res, 200, JSON.stringify(CATALOG.heroes || []));
-  if (p === "/api/cards") return send(res, 200, JSON.stringify(CATALOG.cards || []));
+  if (p === "/api/cards") {
+    const pve = flattenCityPve();
+    return send(res, 200, JSON.stringify(pve.length ? pve : (CATALOG.cards || [])));
+  }
   if (p === "/api/hero-index") return send(res, 200, JSON.stringify(CATALOG.heroIndex || []));
   if (p === "/api/duelyst") {
     const units = duelystIndex();

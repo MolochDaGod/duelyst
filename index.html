@@ -389,9 +389,15 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
   const frame = tcgBit[L.factionFrame[fac] || L.factionFrame.other];
   const art = L.art;
   if (bg) ctx.drawImage(bg, art.x, art.y, art.w, art.h);
+  if (pack && pack.portrait && pack.img) {
+    const iw = pack.img.width, ih = pack.img.height;
+    const s = Math.min(art.w / iw, art.h / ih);
+    const dw = iw * s, dh = ih * s;
+    ctx.drawImage(pack.img, art.x + (art.w - dw) / 2, art.y + (art.h - dh) / 2, dw, dh);
+  }
   const frs = pack && (pack.anims[animKey] || pack.anims.breathing || pack.anims.idle) || [];
   const fr = frs[frameI] || frs[0];
-  if (pack && fr) {
+  if (pack && fr && !pack.portrait) {
     const s = Math.min(art.w / fr.w, art.h / fr.h) * 0.98;
     const dw = fr.w * s, dh = fr.h * s;
     const dx = art.x + (art.w - dw) / 2;
@@ -400,7 +406,7 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     ctx.beginPath();
     ctx.ellipse(art.x + art.w / 2, art.y + art.h - 6, dw * 0.28, 5, 0, 0, Math.PI * 2);
     ctx.fill();
-    drawOutlinedSprite(ctx, pack.img, fr, dx, dy, dw, dh, outlineColor(animKey));
+    drawOutlinedSprite(ctx, fr.img || pack.img, fr, dx, dy, dw, dh, outlineColor(animKey));
   }
   if (frame) ctx.drawImage(frame, 0, 0, 195, 284);
   const nm = L.name;
@@ -515,7 +521,7 @@ const heroes = cat.heroes || [];
 const cards = cat.cards || [];
 const units = duel.units || [];
 document.getElementById("stat").textContent =
-  `${units.length} Duelyst · ${cat.cardCount} Season 1 · ${cat.heroCount} GrudaWars`;
+  `${units.length} Duelyst · ${cards.length} city PVE · ${heroes.length} GrudaWars`;
 
 let mode = "duelyst";
 let faction = "lyonar";
@@ -579,10 +585,15 @@ async function loadInfoFx(key) {
 
 function filtered() {
   if (mode === "cards") {
-    return cards.filter((c) => !q || `${c.name} ${c.rarity} ${(c.abilities || []).join(" ")}`.toLowerCase().includes(q));
+    return cards.filter((c) => {
+      if (faction !== "all" && c.city !== faction && c.faction !== faction) return false;
+      if (role !== "all" && c.pveRole !== role && c.role !== role) return false;
+      if (q && !`${c.name} ${c.city || ""} ${c.rarity || ""} ${(c.abilities || []).join(" ")}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
   }
   if (mode === "heroes") {
-    return heroes.filter((h) => !q || h.name.toLowerCase().includes(q));
+    return heroes.filter((h) => !q || h.name.toLowerCase().includes(q) || Object.keys(h.clips || {}).join(" ").includes(q));
   }
   return units.filter((u) => {
     if (faction !== "all" && u.faction !== faction) return false;
@@ -594,6 +605,26 @@ function filtered() {
 }
 
 function paintCodex() {
+  if (mode === "cards") {
+    const cities = [["all", cards.length], ...[...new Set(cards.map((c) => c.city).filter(Boolean))].map((c) => [c, cards.filter((x) => x.city === c).length])];
+    document.getElementById("factions").innerHTML = cities.map(([f, n]) =>
+      `<button class="chip ${f === faction ? "on" : ""}" data-f="${f}">
+        <span><i class="dot" style="background:#c9a227"></i>${f}</span>
+        <span>${n}</span></button>`
+    ).join("");
+    const roles = ["all", ...[...new Set(cards.map((c) => c.pveRole || c.role).filter(Boolean))]];
+    document.getElementById("roles").innerHTML = roles.map((r) =>
+      `<button class="${r === role ? "on" : ""}" data-r="${r}">${r}</button>`
+    ).join("");
+    document.getElementById("kits").innerHTML = "";
+    return;
+  }
+  if (mode === "heroes") {
+    document.getElementById("factions").innerHTML = `<button class="chip on" data-f="all"><span>GrudaWars</span><span>${heroes.length}</span></button>`;
+    document.getElementById("roles").innerHTML = `<button class="on" data-r="all">hero</button>`;
+    document.getElementById("kits").innerHTML = "";
+    return;
+  }
   const facs = [["all", units.length], ...Object.entries(duel.factions || {})];
   document.getElementById("factions").innerHTML = facs.map(([f, n]) =>
     `<button class="chip ${f === faction ? "on" : ""}" data-f="${f}">
@@ -629,16 +660,13 @@ function renderLibrary() {
     if (mode === "cards") {
       const on = current && current.id === item.id ? "sel" : "";
       return `<article class="card ${on}" data-id="${item.id}">
-        <div class="art"><img src="${item.image || ""}" alt="" /></div>
-        <div class="meta"><div class="name">${esc(item.name)}</div>
-        <div class="tag">${item.rarity || ""} · ${(item.abilities || []).slice(0, 2).join(" · ")}</div></div></article>`;
+        <div class="art"><canvas data-id="${item.id}" width="390" height="568"></canvas></div></article>`;
     }
-    return `<article class="card" data-id="${item.id}">
-      <div class="art"><img src="${(item.clips && (item.clips.idle || item.clips.attack1)) || ""}" alt="" /></div>
-      <div class="meta"><div class="name">${esc(item.name)}</div>
-      <div class="tag">${Object.keys(item.clips || {}).join(" · ")}</div></div></article>`;
+    const on = current && current.id === item.id ? "sel" : "";
+    return `<article class="card ${on}" data-id="${item.id}">
+      <div class="art"><canvas data-id="${item.id}" width="390" height="568"></canvas></div></article>`;
   }).join("") || `<div class="tag">no matches</div>`;
-  if (mode === "duelyst") observeCards();
+  observeCards();
 }
 
 function varGold() { return "#e2c078"; }
@@ -648,6 +676,16 @@ const io = new IntersectionObserver((ents) => {
   for (const e of ents) {
     if (!e.isIntersecting) continue;
     const id = e.target.dataset.id;
+    if (mode === "heroes") {
+      const h = heroes.find((x) => x.id === id);
+      if (h) loadGwPack(h).then(() => drawCard(id)).catch(() => {});
+      continue;
+    }
+    if (mode === "cards") {
+      const c = cards.find((x) => x.id === id);
+      if (c) loadCardPortrait(c).then(() => drawCard(id)).catch(() => {});
+      continue;
+    }
     const u = units.find((x) => x.id === id);
     if (u) loadPack(u).then(() => drawCard(id)).catch(() => {});
   }
@@ -692,9 +730,58 @@ async function loadPack(u) {
   return job;
 }
 
+function stripFrames(img) {
+  const w = img.width, h = img.height;
+  const cell = Math.min(w, h);
+  const cols = w >= h ? Math.max(1, Math.round(w / cell)) : 1;
+  const rows = h > w ? Math.max(1, Math.round(h / cell)) : 1;
+  const fw = w / cols, fh = h / rows;
+  const out = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      out.push({ img, x: c * fw, y: r * fh, w: fw, h: fh });
+    }
+  }
+  return out;
+}
+
+function gwClipUrl(url) {
+  const rel = String(url || "");
+  if (/^https?:/i.test(rel)) return rel;
+  if (LOCAL) return rel;
+  return rel.replace(/^\/gw\//, "https://assets.grudge-studio.com/sprites/grudawars/");
+}
+
+async function loadGwPack(h) {
+  if (packs.has(h.id)) return packs.get(h.id);
+  const anims = {};
+  let first = null;
+  for (const [clip, url] of Object.entries(h.clips || {})) {
+    const r = await fetch(gwClipUrl(url));
+    if (!r.ok) continue;
+    const img = await createImageBitmap(await r.blob());
+    if (!first) first = img;
+    anims[clip.toLowerCase()] = stripFrames(img);
+  }
+  const pack = { img: first, anims, unit: h, kind: "grudawars" };
+  packs.set(h.id, pack);
+  return pack;
+}
+
+async function loadCardPortrait(c) {
+  if (packs.has(c.id)) return packs.get(c.id);
+  const src = LOCAL ? (c.image || c.mintImage) : (c.mintImage || c.image);
+  const r = await fetch(src);
+  if (!r.ok) throw new Error("card art " + src);
+  const img = await createImageBitmap(await r.blob());
+  const pack = { img, portrait: true, anims: { idle: [{ img, x: 0, y: 0, w: img.width, h: img.height }] }, unit: c };
+  packs.set(c.id, pack);
+  return pack;
+}
+
 function preferAnim(anims) {
   const names = orderedClips(anims);
-  return ["breathing", "idle", "run", "attack"].find((k) => names.includes(k)) || names[0];
+  return ["breathing", "idle", "walk", "run", "attack1", "attack"].find((k) => names.includes(k)) || names[0];
 }
 
 function drawFit(ctx, img, fr, w, h, animKey, frameI, frameCount) {
@@ -710,7 +797,7 @@ function drawFit(ctx, img, fr, w, h, animKey, frameI, frameCount) {
   ctx.beginPath();
   ctx.ellipse(w / 2, h - pad * 0.4, dw * 0.28, Math.max(6, dh * 0.06), 0, 0, Math.PI * 2);
   ctx.fill();
-  drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, outlineColor(animKey));
+  drawOutlinedSprite(ctx, fr.img || img, fr, dx, dy, dw, dh, outlineColor(animKey));
 }
 
 function sizeBreathe() {
@@ -724,7 +811,7 @@ function sizeBreathe() {
 function drawCard(id) {
   const pack = packs.get(id);
   const canvas = document.querySelector(`canvas[data-id="${id}"]`);
-  const unit = units.find((u) => u.id === id);
+  const unit = units.find((u) => u.id === id) || heroes.find((h) => h.id === id) || cards.find((c) => c.id === id);
   if (!pack || !canvas || !unit) return;
   paintCard(canvas.getContext("2d"), unit, pack, preferAnim(pack.anims), 0, false);
 }
@@ -806,7 +893,7 @@ function renderStrips(pack) {
     const ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, c.width, c.height);
-    ctx.drawImage(pack.img, fr.x, fr.y, fr.w, fr.h, 0, 0, c.width, c.height);
+    ctx.drawImage(fr.img || pack.img, fr.x, fr.y, fr.w, fr.h, 0, 0, c.width, c.height);
   }
   markStrip();
 }
@@ -822,7 +909,7 @@ async function selectUnit(u) {
   const names = orderedClips(pack.anims);
   playing.key = preferAnim(pack.anims);
   playing.i = 0;
-  playing.loop = LOOP_CLIPS.has(playing.key);
+  playing.loop = LOOP_CLIPS.has(playing.key) || playing.key === "walk";
   document.getElementById("title").textContent = u.name;
   document.getElementById("abil").textContent =
     `${u.faction} · ${u.role}${LOOK[u.faction] ? " — " + LOOK[u.faction] : ""} · ${names.map(clipLabel).join(" · ")}`;
@@ -855,6 +942,60 @@ async function selectUnit(u) {
   }
 }
 
+async function selectHero(h) {
+  if (!h) return;
+  current = h;
+  document.querySelectorAll(".card").forEach((el) => el.classList.toggle("sel", el.dataset.id === h.id));
+  const pack = await loadGwPack(h);
+  const names = orderedClips(pack.anims);
+  playing.key = preferAnim(pack.anims);
+  playing.i = 0;
+  playing.loop = true;
+  document.getElementById("title").textContent = h.name;
+  document.getElementById("abil").textContent = `GrudaWars · ${names.map(clipLabel).join(" · ")}`;
+  document.getElementById("anim").innerHTML = names.map((n) =>
+    `<option value="${n}" ${n === playing.key ? "selected" : ""}>${clipLabel(n)} (${pack.anims[n].length})</option>`
+  ).join("");
+  sizeBreathe();
+  paintAnimTabs(pack);
+  renderStrips(pack);
+  drawStage();
+  drawFace();
+  const note = document.getElementById("fxNote");
+  if (note) note.textContent = "GrudaWars CraftPix strips — sliced by frame height, not shown as a whole sheet.";
+}
+
+async function selectCard(c) {
+  if (!c) return;
+  current = c;
+  document.querySelectorAll(".card").forEach((el) => el.classList.toggle("sel", el.dataset.id === c.id));
+  const pack = await loadCardPortrait(c);
+  playing.key = "idle";
+  playing.i = 0;
+  playing.loop = false;
+  document.getElementById("title").textContent = c.name;
+  document.getElementById("abil").textContent =
+    `${c.city || "PVE"} · ${c.pveRole || c.role || "goon"} · ${(c.abilityNames || c.abilities || []).join(" · ")}`;
+  document.getElementById("anim").innerHTML = `<option value="idle" selected>portrait</option>`;
+  paintAnimTabs(pack);
+  renderStrips(pack);
+  const fac = "other";
+  if (tcgLayout) {
+    await tcgSrc(tcgLayout.factionBg[fac]);
+    await tcgSrc(tcgLayout.factionFrame[fac]);
+    for (const slot of tcgLayout.playStyles || []) {
+      await tcgSrc(slot.icon);
+      await tcgSrc(slot.badge);
+    }
+    for (let n = 0; n < 10; n++) await tcgSrc(`numbers/${n}.png`);
+  }
+  sizeBreathe();
+  drawStage();
+  drawFace();
+  const note = document.getElementById("fxNote");
+  if (note) note.textContent = "Season 1 city PVE enemy — 12 cities × 5 goons + 1 boss. Not the Duelyst player mint.";
+}
+
 function playKey(key) {
   const pack = current && packs.get(current.id);
   if (!pack) return;
@@ -862,7 +1003,7 @@ function playKey(key) {
   const k = names.includes(key) ? key : preferAnim(pack.anims);
   playing.key = k;
   playing.i = 0;
-  playing.loop = LOOP_CLIPS.has(k);
+  playing.loop = LOOP_CLIPS.has(k) || k === "walk" || k === "idle" || k === "run";
   overlay.on = false;
   const sel = document.getElementById("anim");
   if (sel) sel.value = k;
@@ -904,23 +1045,27 @@ document.getElementById("src").onclick = (e) => {
   if (!b) return;
   mode = b.dataset.m;
   document.querySelectorAll("#src button").forEach((x) => x.classList.toggle("on", x === b));
-  if (mode === "duelyst") current = units.find((u) => u.role === "general" && (faction === "all" || u.faction === faction)) || filtered()[0];
+  faction = "all";
+  role = "all";
+  if (mode === "duelyst") current = units.find((u) => u.role === "general") || units[0];
   else current = filtered()[0];
+  paintCodex();
   renderLibrary();
   if (mode === "duelyst" && current) selectUnit(current);
-  else if (mode === "cards" && current) {
-    document.getElementById("title").textContent = current.name;
-    document.getElementById("abil").textContent = (current.abilities || []).join(" · ");
-  }
+  else if (mode === "cards" && current) selectCard(current);
+  else if (mode === "heroes" && current) selectHero(current);
 };
 document.getElementById("factions").onclick = (e) => {
   const b = e.target.closest("button[data-f]");
   if (!b) return;
   faction = b.dataset.f;
   paintCodex();
-  current = units.find((u) => (faction === "all" || u.faction === faction) && u.role === "general") || filtered()[0];
+  if (mode === "duelyst") current = units.find((u) => (faction === "all" || u.faction === faction) && u.role === "general") || filtered()[0];
+  else current = filtered()[0];
   renderLibrary();
-  if (current) selectUnit(current);
+  if (mode === "duelyst" && current) selectUnit(current);
+  else if (mode === "cards" && current) selectCard(current);
+  else if (mode === "heroes" && current) selectHero(current);
 };
 document.getElementById("roles").onclick = (e) => {
   const b = e.target.closest("button[data-r]");
@@ -941,15 +1086,8 @@ document.getElementById("library").onclick = (e) => {
   const card = e.target.closest(".card[data-id]");
   if (!card) return;
   if (mode === "duelyst") selectUnit(units.find((u) => u.id === card.dataset.id));
-  else if (mode === "cards") {
-    current = cards.find((c) => c.id === card.dataset.id);
-    document.getElementById("title").textContent = current.name;
-    document.getElementById("abil").textContent = (current.abilities || []).join(" · ") + " — " + (current.abilityDesc || "");
-  } else {
-    current = heroes.find((h) => h.id === card.dataset.id);
-    document.getElementById("title").textContent = current.name;
-  }
-  document.querySelectorAll(".card").forEach((el) => el.classList.toggle("sel", el === card));
+  else if (mode === "cards") selectCard(cards.find((c) => c.id === card.dataset.id));
+  else selectHero(heroes.find((h) => h.id === card.dataset.id));
 };
 document.getElementById("anim").onchange = (e) => {
   playKey(e.target.value);

@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { clashAbility } from "../clash-abilities.mjs";
 import { kitOf, clipsFromPlistXml } from "../runtime/DuelystSprite.js";
+import { flattenCityPve } from "../../rpg-maker-studio/pve-roster.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DUEL = path.resolve(here, "..");
@@ -62,15 +63,27 @@ const index = {
   units,
 };
 
+const GW_CDN = "https://assets.grudge-studio.com/sprites/grudawars";
+const pveCards = flattenCityPve();
+const heroes = (STUDIO_CAT.heroes || []).map((h) => ({
+  ...h,
+  clips: Object.fromEntries(
+    Object.entries(h.clips || {}).map(([k, url]) => [
+      k,
+      String(url).replace(/^\/gw\//, GW_CDN + "/"),
+    ]),
+  ),
+}));
 const catalog = {
   purpose: "catalog",
   notPlayerBag: true,
-  cardCount: (STUDIO_CAT.cards || []).length,
-  heroCount: (STUDIO_CAT.heroes || []).length,
+  cardCount: pveCards.length,
+  heroCount: heroes.length,
   fxCount: STUDIO_CAT.fxCount || 0,
   duelystUnits: units.length,
-  heroes: STUDIO_CAT.heroes || [],
-  cards: STUDIO_CAT.cards || [],
+  heroes,
+  cards: pveCards,
+  cities: [...new Set(pveCards.map((c) => c.city))],
 };
 
 const vercelMeta = path.join(DIST, ".vercel");
@@ -97,8 +110,10 @@ fs.writeFileSync(path.join(DIST, "vercel.json"), JSON.stringify({
   rewrites: [
     { source: "/info-vfx/:path*", destination: "https://info.grudge-studio.com/:path*" },
     { source: "/duelyst/:path*", destination: "https://assets.grudge-studio.com/sprites/duelyst/:path*" },
+    { source: "/gw/:path*", destination: "https://assets.grudge-studio.com/sprites/grudawars/:path*" },
+    { source: "/card-art/:path*", destination: "https://battle.thc-labz.xyz/card-art/:path*" },
     { source: "/rpg-maker-studio", destination: "/index.html" },
-    { source: "/((?!catalog/|tcg-chrome/|runtime/|api/).*)", destination: "/index.html" },
+    { source: "/((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/).*)", destination: "/index.html" },
   ],
 }, null, 2));
 
@@ -133,4 +148,4 @@ fs.writeFileSync(infoJson, JSON.stringify({
 fs.mkdirSync(path.join(DIST, "api", "v1"), { recursive: true });
 fs.copyFileSync(infoJson, path.join(DIST, "api", "v1", "duelyst-units.json"));
 
-console.log("baked", DIST, "units", units.length);
+console.log("baked", DIST, "units", units.length, "pve", pveCards.length, "gw", heroes.length);
