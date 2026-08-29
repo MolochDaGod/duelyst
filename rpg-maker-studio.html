@@ -340,44 +340,38 @@ function wrapLines(ctx, text, maxW) {
 }
 
 let tintScratch = null;
-function clipTint(animKey, frameI, total) {
+function outlineColor(animKey) {
   const k = String(animKey || "");
-  const t = total > 1 ? frameI / (total - 1) : 0.55;
-  const pulse = 0.22 + 0.5 * Math.sin(Math.max(0, Math.min(1, t)) * Math.PI);
-  if (k === "hit") return `rgba(255, 48, 42, ${0.32 + pulse})`;
-  if (k === "death" || k === "death2") return `rgba(180, 20, 28, ${0.22 + pulse * 0.55})`;
-  if (k === "attack" || k === "projectile") return `rgba(255, 168, 36, ${0.22 + pulse * 0.7})`;
-  if (k.startsWith("cast") || k === "explode") return `rgba(255, 210, 80, ${0.18 + pulse * 0.55})`;
-  return null;
+  if (k === "hit") return "#ff3028";
+  if (k === "death" || k === "death2") return "#b4141c";
+  if (k === "attack" || k === "projectile") return "#ffb024";
+  if (k.startsWith("cast") || k === "explode") return "#ffe050";
+  return "#120a06";
 }
 
-function drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, tint) {
+function drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, ring) {
   const o = 1;
+  const color = ring || "#120a06";
   ctx.save();
   ctx.imageSmoothingEnabled = false;
-  ctx.filter = "brightness(0)";
+  if (!tintScratch) tintScratch = document.createElement("canvas");
+  const tw = Math.max(1, Math.ceil(dw) + 2);
+  const th = Math.max(1, Math.ceil(dh) + 2);
+  if (tintScratch.width !== tw) tintScratch.width = tw;
+  if (tintScratch.height !== th) tintScratch.height = th;
+  const tctx = tintScratch.getContext("2d");
+  tctx.imageSmoothingEnabled = false;
+  tctx.globalCompositeOperation = "source-over";
+  tctx.clearRect(0, 0, tw, th);
+  tctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 1, 1, dw, dh);
+  tctx.globalCompositeOperation = "source-in";
+  tctx.fillStyle = color;
+  tctx.fillRect(0, 0, tw, th);
+  tctx.globalCompositeOperation = "source-over";
   for (const [ox, oy] of [[-o, 0], [o, 0], [0, -o], [0, o]]) {
-    ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, dx + ox, dy + oy, dw, dh);
+    ctx.drawImage(tintScratch, dx + ox - 1, dy + oy - 1);
   }
-  ctx.filter = "none";
   ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, dx, dy, dw, dh);
-  if (tint) {
-    if (!tintScratch) tintScratch = document.createElement("canvas");
-    const tw = Math.max(1, Math.ceil(dw));
-    const th = Math.max(1, Math.ceil(dh));
-    if (tintScratch.width !== tw) tintScratch.width = tw;
-    if (tintScratch.height !== th) tintScratch.height = th;
-    const tctx = tintScratch.getContext("2d");
-    tctx.imageSmoothingEnabled = false;
-    tctx.globalCompositeOperation = "source-over";
-    tctx.clearRect(0, 0, tw, th);
-    tctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, dw, dh);
-    tctx.globalCompositeOperation = "source-atop";
-    tctx.fillStyle = tint;
-    tctx.fillRect(0, 0, tw, th);
-    tctx.globalCompositeOperation = "source-over";
-    ctx.drawImage(tintScratch, dx, dy);
-  }
   ctx.restore();
 }
 
@@ -406,7 +400,7 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     ctx.beginPath();
     ctx.ellipse(art.x + art.w / 2, art.y + art.h - 6, dw * 0.28, 5, 0, 0, Math.PI * 2);
     ctx.fill();
-    drawOutlinedSprite(ctx, pack.img, fr, dx, dy, dw, dh, clipTint(animKey, frameI, frs.length));
+    drawOutlinedSprite(ctx, pack.img, fr, dx, dy, dw, dh, outlineColor(animKey));
   }
   if (frame) ctx.drawImage(frame, 0, 0, 195, 284);
   const nm = L.name;
@@ -716,7 +710,7 @@ function drawFit(ctx, img, fr, w, h, animKey, frameI, frameCount) {
   ctx.beginPath();
   ctx.ellipse(w / 2, h - pad * 0.4, dw * 0.28, Math.max(6, dh * 0.06), 0, 0, Math.PI * 2);
   ctx.fill();
-  drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, clipTint(animKey, frameI, frameCount));
+  drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, outlineColor(animKey));
 }
 
 function sizeBreathe() {
