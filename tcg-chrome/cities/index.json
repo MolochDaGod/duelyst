@@ -1,0 +1,21 @@
+{
+ "note": "per-city PVE card backgrounds; keeps same-portrait cards visually distinct",
+ "size": [
+  200,
+  200
+ ],
+ "byCity": {
+  "Atlanta": "cities/atlanta.png",
+  "Bronx": "cities/bronx.png",
+  "Brooklyn": "cities/brooklyn.png",
+  "Chicago": "cities/chicago.png",
+  "Compton": "cities/compton.png",
+  "Las Vegas": "cities/las-vegas.png",
+  "Los Angeles": "cities/los-angeles.png",
+  "Manhattan": "cities/manhattan.png",
+  "Miami": "cities/miami.png",
+  "New Orleans": "cities/new-orleans.png",
+  "Queens": "cities/queens.png",
+  "San Francisco": "cities/san-francisco.png"
+ }
+}

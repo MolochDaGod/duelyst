@@ -1,0 +1,45 @@
+{
+ "note": "THC Labz BadBudz card chrome \u2014 scene base + panning full-window bud wallpaper",
+ "logo": "thc/logo.png",
+ "bgSize": [
+  220,
+  240
+ ],
+ "tiers": {
+  "common": {
+   "bg": "thc/bg-common.png",
+   "buds": "thc/buds-common.png",
+   "wallW": 1240,
+   "wallH": 300,
+   "strain": "regz"
+  },
+  "uncommon": {
+   "bg": "thc/bg-uncommon.png",
+   "buds": "thc/buds-uncommon.png",
+   "wallW": 1240,
+   "wallH": 300,
+   "strain": "sourdiesel"
+  },
+  "rare": {
+   "bg": "thc/bg-rare.png",
+   "buds": "thc/buds-rare.png",
+   "wallW": 1240,
+   "wallH": 300,
+   "strain": "sourdiesel-purple"
+  },
+  "epic": {
+   "bg": "thc/bg-epic.png",
+   "buds": "thc/buds-epic.png",
+   "wallW": 1240,
+   "wallH": 300,
+   "strain": "purplehaze"
+  },
+  "legendary": {
+   "bg": "thc/bg-legendary.png",
+   "buds": "thc/buds-legendary.png",
+   "wallW": 1240,
+   "wallH": 300,
+   "strain": "runtz"
+  }
+ }
+}

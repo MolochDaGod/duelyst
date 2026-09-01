@@ -1,78 +1,318 @@
 {
-  "card": {
-    "w": 195,
-    "h": 284
+ "card": {
+  "w": 195,
+  "h": 284
+ },
+ "name": {
+  "x": 10,
+  "y": 6,
+  "w": 148,
+  "h": 24,
+  "size": 14
+ },
+ "art": {
+  "x": 25,
+  "y": 15,
+  "w": 145,
+  "h": 131
+ },
+ "artBleed": 2,
+ "factionArt": {
+  "lyonar": {
+   "x": 31,
+   "y": 31,
+   "w": 133,
+   "h": 135
   },
-  "name": { "x": 10, "y": 6, "w": 148, "h": 24, "size": 13 },
-  "art": {
-    "x": 31,
-    "y": 48,
-    "w": 132,
-    "h": 112
+  "songhai": {
+   "x": 17,
+   "y": 18,
+   "w": 161,
+   "h": 145
   },
-  "ribbon": {
-    "x": 16,
-    "y": 164,
-    "w": 163,
-    "h": 32
+  "vetruvian": {
+   "x": 18,
+   "y": 32,
+   "w": 159,
+   "h": 129
   },
-  "stats": {
-    "cost": { "cx": 176, "cy": 18, "r": 15, "fill": "#3a7bd9", "label": "COST", "size": 14, "icon": "slots/crystal-mana.png" },
-    "attack": { "cx": 26, "cy": 268, "r": 16, "fill": "#c9a227", "label": "ATK", "size": 14, "icon": "slots/crystal-attack.png" },
-    "health": { "cx": 170, "cy": 268, "r": 16, "fill": "#2f9e4f", "label": "HP", "size": 14, "icon": "slots/crystal-health.png" }
+  "abyssian": {
+   "x": 17,
+   "y": 15,
+   "w": 161,
+   "h": 148
   },
-  "fonts": {
-    "name": 13,
-    "kind": 8,
-    "meta": 8,
-    "body": 9,
-    "gem": 14,
-    "stack": "Cambria, Constantia, Palatino Linotype, Palatino, Georgia, Times New Roman, serif"
+  "magmar": {
+   "x": 17,
+   "y": 15,
+   "w": 161,
+   "h": 148
   },
-  "playStyles": [
-    { "key": "melee", "label": "Melee", "icon": "slots/attack.png", "badge": "slots/badge-attack.png" },
-    { "key": "ranged", "label": "Range", "icon": "slots/mana.png", "badge": "slots/badge-mana.png" },
-    { "key": "splash", "label": "Splash", "icon": "slots/ability.png", "badge": "slots/badge-ability.png" },
-    { "key": "flying", "label": "Air", "icon": "slots/rarity.png", "badge": "slots/badge-rarity.png" },
-    { "key": "tank", "label": "Tank", "icon": "slots/type.png", "badge": "slots/badge-type.png" },
-    { "key": "charge", "label": "Rush", "icon": "slots/health.png", "badge": "slots/badge-health.png" }
-  ],
-  "text": {
-    "x": 18,
-    "y": 196,
-    "w": 159,
-    "h": 56
+  "vanar": {
+   "x": 18,
+   "y": 32,
+   "w": 159,
+   "h": 129
   },
-  "grid": { "step": 13, "on": false },
-  "factionFrame": {
-    "lyonar": "frames/lyonar.png",
-    "songhai": "frames/songhai.png",
-    "vetruvian": "frames/vetruvian.png",
-    "abyssian": "frames/abyssian.png",
-    "magmar": "frames/magmar.png",
-    "vanar": "frames/vanar.png",
-    "neutral": "frames/neutral.png",
-    "boss": "frames/boss.png",
-    "critter": "frames/critter.png",
-    "other": "frames/other.png"
+  "neutral": {
+   "x": 25,
+   "y": 15,
+   "w": 145,
+   "h": 131
   },
-  "factionBg": {
-    "lyonar": "backgrounds/lyonar.png",
-    "songhai": "backgrounds/songhai.png",
-    "vetruvian": "backgrounds/vetruvian.png",
-    "abyssian": "backgrounds/abyssian.png",
-    "magmar": "backgrounds/magmar.png",
-    "vanar": "backgrounds/vanar.png",
-    "neutral": "backgrounds/neutral.png",
-    "boss": "backgrounds/boss.png",
-    "critter": "backgrounds/critter.png",
-    "other": "backgrounds/other.png"
+  "boss": {
+   "x": 17,
+   "y": 15,
+   "w": 161,
+   "h": 148
   },
-  "not": [
-    "Nexus Nemesis",
-    "CraftPix filenames in delivery",
-    "second bag"
-  ],
-  "numbers": "numbers/{n}.png",
-  "font": "Cambria / Palatino — name navy outline, parchment gold outline (not cream-on-cream)"
+  "critter": {
+   "x": 25,
+   "y": 15,
+   "w": 145,
+   "h": 131
+  },
+  "other": {
+   "x": 25,
+   "y": 15,
+   "w": 145,
+   "h": 131
+  }
+ },
+ "ribbon": {
+  "x": 16,
+  "y": 164,
+  "w": 163,
+  "h": 32
+ },
+ "stats": {
+  "cost": {
+   "cx": 176,
+   "cy": 18,
+   "r": 15,
+   "fill": "#3a7bd9",
+   "label": "COST",
+   "size": 17,
+   "icon": "slots/crystal-mana.png"
+  },
+  "attack": {
+   "cx": 26,
+   "cy": 268,
+   "r": 16,
+   "fill": "#c9a227",
+   "label": "ATK",
+   "size": 19,
+   "icon": "slots/crystal-attack.png"
+  },
+  "health": {
+   "cx": 170,
+   "cy": 268,
+   "r": 16,
+   "fill": "#2f9e4f",
+   "label": "HP",
+   "size": 19,
+   "icon": "slots/crystal-health.png"
+  }
+ },
+ "fonts": {
+  "name": 14,
+  "kind": 9,
+  "meta": 9,
+  "body": 10,
+  "gem": 18,
+  "stack": "Cambria, Constantia, Palatino Linotype, Palatino, Georgia, Times New Roman, serif"
+ },
+ "playStyles": [
+  {
+   "key": "melee",
+   "label": "Melee",
+   "icon": "slots/attack.png",
+   "badge": "slots/badge-attack.png"
+  },
+  {
+   "key": "ranged",
+   "label": "Range",
+   "icon": "slots/mana.png",
+   "badge": "slots/badge-mana.png"
+  },
+  {
+   "key": "splash",
+   "label": "Splash",
+   "icon": "slots/ability.png",
+   "badge": "slots/badge-ability.png"
+  },
+  {
+   "key": "flying",
+   "label": "Air",
+   "icon": "slots/rarity.png",
+   "badge": "slots/badge-rarity.png"
+  },
+  {
+   "key": "tank",
+   "label": "Tank",
+   "icon": "slots/type.png",
+   "badge": "slots/badge-type.png"
+  },
+  {
+   "key": "charge",
+   "label": "Rush",
+   "icon": "slots/health.png",
+   "badge": "slots/badge-health.png"
+  }
+ ],
+ "text": {
+  "x": 16,
+  "y": 194,
+  "w": 163,
+  "h": 60
+ },
+ "grid": {
+  "step": 13,
+  "on": false
+ },
+ "factionFrame": {
+  "lyonar": "frames/lyonar.png",
+  "songhai": "frames/songhai.png",
+  "vetruvian": "frames/vetruvian.png",
+  "abyssian": "frames/abyssian.png",
+  "magmar": "frames/magmar.png",
+  "vanar": "frames/vanar.png",
+  "neutral": "frames/neutral.png",
+  "boss": "frames/boss.png",
+  "critter": "frames/critter.png",
+  "other": "frames/other.png"
+ },
+ "factionBg": {
+  "lyonar": "backgrounds/lyonar.png",
+  "songhai": "backgrounds/songhai.png",
+  "vetruvian": "backgrounds/vetruvian.png",
+  "abyssian": "backgrounds/abyssian.png",
+  "magmar": "backgrounds/magmar.png",
+  "vanar": "backgrounds/vanar.png",
+  "neutral": "backgrounds/neutral.png",
+  "boss": "backgrounds/boss.png",
+  "critter": "backgrounds/critter.png",
+  "other": "backgrounds/other.png"
+ },
+ "not": [
+  "Nexus Nemesis",
+  "CraftPix filenames in delivery",
+  "second bag"
+ ],
+ "numbers": "numbers/{n}.png",
+ "font": "Cambria / Palatino \u2014 name navy outline, parchment gold outline (not cream-on-cream)",
+ "thc": {
+  "note": "dopebudz.* city PVE opponents - bosses get the weed frame, goons gold",
+  "byRarity": {
+   "legendary": "weed"
+  },
+  "default": "gold",
+  "background": "backgrounds/other.png",
+  "frames": {
+   "gold": {
+    "frame": "frames/thc-epic-gold.png",
+    "art": {
+     "x": 15,
+     "y": 42,
+     "w": 166,
+     "h": 156
+    },
+    "name": {
+     "x": 33,
+     "y": 8,
+     "w": 128,
+     "h": 29
+    },
+    "text": {
+     "x": 24,
+     "y": 200,
+     "w": 147,
+     "h": 32
+    },
+    "stats": {
+     "attack": {
+      "cx": 28,
+      "cy": 253,
+      "r": 20,
+      "size": 18,
+      "label": "ATK"
+     },
+     "health": {
+      "cx": 168,
+      "cy": 253,
+      "r": 20,
+      "size": 18,
+      "label": "HP"
+     },
+     "cost": {
+      "cx": 98,
+      "cy": 259,
+      "r": 12,
+      "size": 16,
+      "label": "COST"
+     }
+    },
+    "scrim": {
+     "x": 26,
+     "y": 201,
+     "w": 143,
+     "h": 30,
+     "r": 13,
+     "alpha": 0.34
+    }
+   },
+   "weed": {
+    "frame": "frames/thc-legendary-weed.png",
+    "art": {
+     "x": 17,
+     "y": 50,
+     "w": 161,
+     "h": 147
+    },
+    "name": {
+     "x": 26,
+     "y": 11,
+     "w": 144,
+     "h": 29
+    },
+    "text": {
+     "x": 24,
+     "y": 199,
+     "w": 147,
+     "h": 32
+    },
+    "stats": {
+     "attack": {
+      "cx": 31,
+      "cy": 254,
+      "r": 21,
+      "size": 18,
+      "label": "ATK"
+     },
+     "health": {
+      "cx": 169,
+      "cy": 254,
+      "r": 21,
+      "size": 18,
+      "label": "HP"
+     },
+     "cost": {
+      "cx": 100,
+      "cy": 259,
+      "r": 12,
+      "size": 16,
+      "label": "COST"
+     }
+    },
+    "scrim": {
+     "x": 26,
+     "y": 200,
+     "w": 143,
+     "h": 30,
+     "r": 13,
+     "alpha": 0.42
+    }
+   }
+  }
+ }
 }

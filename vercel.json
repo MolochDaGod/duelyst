@@ -32,9 +32,11 @@
       "source": "/rpg-maker-studio",
       "destination": "/index.html"
     },
-    {
-      "source": "/((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/v1/cards", "destination": "/api/v1/cards.json" },
+    { "source": "/api/v1/art", "destination": "/api/v1/art.json" },
+    { "source": "/api/v1/cards-by-uuid", "destination": "/api/v1/cards-by-uuid.json" },
+    { "source": "/api/v1/clips", "destination": "/api/v1/clips.json" },
+    { "source": "/api/v1/vfx", "destination": "/api/v1/vfx.json" },
+    { "source": "/((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/).*)", "destination": "/index.html" }
   ]
 }

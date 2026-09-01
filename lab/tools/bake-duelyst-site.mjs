@@ -3,6 +3,7 @@
  * Binaries stay on R2; this dist is HTML + JSON + tcg-chrome + runtime JS.
  */
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { clashAbility } from "../clash-abilities.mjs";
@@ -56,7 +57,10 @@ const units = (CAT.units || []).map((u) => {
 
 const index = {
   count: units.length,
-  factions: CAT.factions || HIER.factions || {},
+  // Count from the units themselves — a hand-maintained map drifts (the old one
+  // claimed `other: 2` for what are really `critter` units, producing a dead
+  // faction chip in the Codex that filtered to nothing).
+  factions: units.reduce((a, u) => ((a[u.faction] = (a[u.faction] || 0) + 1), a), {}),
   roles: HIER.roles || {},
   cdn: CDN,
   notPlayerBag: true,
@@ -65,6 +69,30 @@ const index = {
 
 const GW_CDN = "https://assets.grudge-studio.com/sprites/grudawars";
 const pveCards = flattenCityPve();
+// Card-sized portraits (build-pve-thumbs.py). The mint originals average 1.7 MB
+// each, which made the 72-card grid pull ~122 MB; the WebP set is 3.5 MB total.
+let pveThumbs = {};
+try {
+  pveThumbs = JSON.parse(fs.readFileSync(
+    path.resolve(here, "../../catalog/pve-thumbs.json"), "utf8")).byCardId || {};
+} catch {
+  console.warn("no catalog/pve-thumbs.json — run lab/tools/build-pve-thumbs.py");
+}
+// Portraits whose flat studio plate has been keyed out (cut-pve-backgrounds.py).
+let pveCutouts = {};
+try {
+  pveCutouts = JSON.parse(fs.readFileSync(
+    path.resolve(here, "../../catalog/pve-cutouts.json"), "utf8")).byCardId || {};
+} catch {
+  console.warn("no catalog/pve-cutouts.json — run lab/tools/cut-pve-backgrounds.py");
+}
+for (const c of pveCards) {
+  if (pveThumbs[c.id]) c.cardImage = pveThumbs[c.id];
+  // Twenty of the Season 1 portraits were painted on a flat studio plate, which
+  // covered the card's own city backdrop with a slab of one flat colour. The cut
+  // version is transparent-backed, so it goes first in the portrait chain.
+  if (pveCutouts[c.id]) c.cutImage = pveCutouts[c.id];
+}
 const heroes = (STUDIO_CAT.heroes || []).map((h) => ({
   ...h,
   clips: Object.fromEntries(
@@ -113,6 +141,11 @@ fs.writeFileSync(path.join(DIST, "vercel.json"), JSON.stringify({
     { source: "/gw/:path*", destination: "https://assets.grudge-studio.com/sprites/grudawars/:path*" },
     { source: "/card-art/:path*", destination: "https://battle.thc-labz.xyz/card-art/:path*" },
     { source: "/rpg-maker-studio", destination: "/index.html" },
+    { source: "/api/v1/cards", destination: "/api/v1/cards.json" },
+    { source: "/api/v1/art", destination: "/api/v1/art.json" },
+    { source: "/api/v1/cards-by-uuid", destination: "/api/v1/cards-by-uuid.json" },
+    { source: "/api/v1/clips", destination: "/api/v1/clips.json" },
+    { source: "/api/v1/vfx", destination: "/api/v1/vfx.json" },
     { source: "/((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/).*)", destination: "/index.html" },
   ],
 }, null, 2));
@@ -148,4 +181,33 @@ fs.writeFileSync(infoJson, JSON.stringify({
 fs.mkdirSync(path.join(DIST, "api", "v1"), { recursive: true });
 fs.copyFileSync(infoJson, path.join(DIST, "api", "v1", "duelyst-units.json"));
 
-console.log("baked", DIST, "units", units.length, "pve", pveCards.length, "gw", heroes.length);
+// ── Grudge card registry (UUID + art index + API payloads) ──────────
+// build-card-registry.mjs reads catalog/*.json, so it must run after the
+// writes above; it emits catalog/cards.json + api/v1/{cards,art,cards-by-uuid}.
+const DUEL_REPO = path.resolve(here, "../..");
+fs.writeFileSync(path.join(DUEL_REPO, "catalog", "duelyst-index.json"), JSON.stringify(index));
+fs.writeFileSync(path.join(DUEL_REPO, "catalog", "catalog.json"), JSON.stringify(catalog));
+// Per-clip frame data + VFX sprites come from the extracted source; keep the
+// committed index when the source drive is not mounted on this machine.
+try {
+  execFileSync(process.execPath, [path.join(here, "build-clip-index.mjs")], { stdio: "inherit" });
+} catch (e) {
+  console.warn("clip index skipped (source unavailable), using committed catalog/duelyst-clips.json");
+}
+// BadBudz re-skins the Magmar roster and must be minted before the registry so
+// those rows carry the strain name and rarity rather than the Duelyst ones.
+execFileSync(process.execPath, [path.join(here, "build-badbudz.mjs")], { stdio: "inherit" });
+execFileSync(process.execPath, [path.join(here, "build-card-registry.mjs")], { stdio: "inherit" });
+for (const f of ["cards.json", "duelyst-clips.json", "vfx-index.json", "grudawars-clips.json", "pve-thumbs.json", "pve-cutouts.json", "badbudz.json"]) {
+  const src = path.join(DUEL_REPO, "catalog", f);
+  if (fs.existsSync(src)) fs.copyFileSync(src, path.join(DIST, "catalog", f));
+}
+for (const f of ["cards.json", "art.json", "cards-by-uuid.json", "clips.json", "vfx.json"]) {
+  fs.copyFileSync(path.join(DUEL_REPO, "api", "v1", f), path.join(DIST, "api", "v1", f));
+}
+fs.cpSync(path.join(DUEL_REPO, "tcg-chrome"), path.join(DIST, "tcg-chrome"), { recursive: true });
+
+const registry = JSON.parse(fs.readFileSync(path.join(DUEL_REPO, "catalog", "cards.json"), "utf8"));
+console.log("baked", DIST, "units", units.length, "pve", pveCards.length, "gw", heroes.length,
+  "| registry", registry.total, "cards", registry.artTotal, "art",
+  registry.clipTotal, "clips", registry.frameTotal, "frames");

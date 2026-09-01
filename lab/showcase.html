@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>2D Codex — Duelyst · Season 1 · GrudaWars</title>
+<title>2D Codex — Duelyst · Dopebudz city PVE · GrudaWars</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <style>
   :root {
@@ -95,7 +95,6 @@
   }
   .card .art canvas, .card .art img {
     width: 100%; height: 100%; display: block; object-fit: contain;
-    image-rendering: pixelated; image-rendering: crisp-edges;
     pointer-events: none;
   }
   .card .meta { padding: 8px 9px 10px; flex: 1; border-top: 1px solid #241c32; }
@@ -126,11 +125,42 @@
   .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .row button { flex: 1 1 calc(33.33% - 6px); min-width: 72px; }
   .abil { color: var(--muted); font-size: 11px; min-height: 2.4em; }
+  .uuid {
+    margin: 6px 0 2px; font-size: 10px; color: var(--gold); letter-spacing: .04em;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .uuid code {
+    -webkit-user-select: text; user-select: text; cursor: pointer;
+    background: #1a1524; border: 1px solid var(--line); border-radius: 2px; padding: 2px 6px;
+    position: relative; transition: border-color .15s, color .15s, background .15s;
+  }
+  .uuid code:hover { border-color: var(--gold); background: #221b30; }
+  .uuid code::after {
+    content: "copy"; margin-left: 8px; font-size: 9px; color: var(--muted);
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .uuid code.copied { border-color: #6ee07a; color: #b7f5bd; background: #16281a; }
+  .uuid code.copied::after { content: "copied"; color: #6ee07a; }
+  .uuid code.failed { border-color: #e07a6e; }
+  .uuid code.failed::after { content: "press ctrl+c"; color: #e07a6e; }
+  .uuid a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--line); }
+  .uuid a:hover { color: var(--gold); }
   #face {
     display: block; flex: 0 0 auto; width: 234px; height: 341px; margin: 8px 8px 8px 0;
-    image-rendering: pixelated; image-rendering: crisp-edges;
     background: #07050c; align-self: center;
   }
+  .dl-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 0 10px 4px; margin-top: -2px;
+  }
+  .dl-row button {
+    font: inherit; font-size: 11px; letter-spacing: .04em; cursor: pointer;
+    color: var(--gold); background: #1a1524;
+    border: 1px solid var(--line); border-radius: 3px; padding: 5px 10px;
+  }
+  .dl-row button:hover:not(:disabled) { border-color: var(--gold); color: #ffe9a8; }
+  .dl-row button:disabled { opacity: .55; cursor: progress; }
+  .dl-note { font-size: 10px; color: var(--muted); }
   .strips { flex: 1; min-height: 0; overflow: auto; padding: 0 10px 16px; border-top: 1px solid var(--line); }
   .strip { margin: 10px 0; }
   .strip-label { font-size: 10px; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
@@ -166,8 +196,9 @@
     <div class="stat" id="stat">loading…</div>
     <div class="src" id="src">
       <button data-m="duelyst" class="on">Duelyst</button>
-      <button data-m="cards">Season 1</button>
+      <button data-m="cards">Dopebudz PVE</button>
       <button data-m="heroes">GrudaWars</button>
+      <button data-m="badbudz">BadBudz</button>
     </div>
     <input id="q" placeholder="search name, role, faction…" style="max-width:280px" />
     <button type="button" id="gridBtn">grid</button>
@@ -184,7 +215,12 @@
   <aside class="inspect">
     <div class="stage-row">
       <div class="viewport"><canvas id="breathe"></canvas></div>
-      <canvas id="face" width="390" height="568" title="CraftPix TCG delivery face"></canvas>
+      <canvas id="face" width="585" height="852" title="CraftPix TCG delivery face"></canvas>
+    </div>
+    <div class="dl-row">
+      <button type="button" id="dlApng" title="Animated PNG of this card playing its breathe/idle loop">download animated card</button>
+      <button type="button" id="dlPng" title="Single still frame of the card face">still .png</button>
+      <span class="dl-note" id="dlNote"></span>
     </div>
     <div class="body">
       <h2 class="display" id="title">—</h2>
@@ -193,6 +229,7 @@
       <div class="row" id="animTabs"></div>
       <div class="abil" id="fxNote"></div>
       <div class="abil" id="commanderNote">Commander: GROWERZ / THC Labz / Grudge cNFT on the castle (hero ability / passives). Deck troops use Clash of Clans abilities: Melee · Range · Splash · Air · Tank · Rush (gold ring = this card).</div>
+      <div class="uuid" id="uuid" hidden></div>
     </div>
     <div class="strips" id="strips"></div>
   </aside>
@@ -203,7 +240,12 @@ import { parsePlist, groupAnims, orderedClips, clipLabel, kitOf, LOOP_CLIPS } fr
 const FAC_COLOR = {
   lyonar: "#d8c06a", songhai: "#d14b4b", vetruvian: "#c9843a", abyssian: "#7a5cff",
   magmar: "#3ecf7a", vanar: "#6ec8e8", neutral: "#c4b8a4", boss: "#ff6b9d",
-  critter: "#99aaaa", other: "#888888",
+  critter: "#99aaaa", other: "#888888", badbudz: "#8de84f",
+};
+/** BadBudz strain ladder — cheapest to loudest. */
+const RARITY_COLOR = {
+  common: "#b9a071", uncommon: "#7fd45a", rare: "#59c2a8",
+  epic: "#a97fe0", legendary: "#8de84f",
 };
 const LOOK = {
   lyonar: "Holy order — gold / white / blue, lions, knights.",
@@ -220,6 +262,8 @@ const FPS = 20;
 const STEP = 1000 / FPS;
 const LOCAL = ["127.0.0.1", "localhost"].includes(location.hostname);
 const INFO_VFX = LOCAL ? "/info-vfx" : "https://info.grudge-studio.com";
+/** Live card registry API (Grudge UUID lookups + art index). */
+const CARD_API = "https://objectstore.grudge-studio.com";
 const tcgLayout = await fetch("/tcg-chrome/LAYOUT.json").then((r) => r.json()).catch(() => null);
 const tcgBit = {};
 const CARD_FONT = (tcgLayout && tcgLayout.fonts && tcgLayout.fonts.stack)
@@ -238,6 +282,19 @@ async function preloadChrome() {
   const jobs = [];
   for (let n = 0; n < 10; n++) jobs.push(tcgSrc(`numbers/${n}.png`));
   jobs.push(tcgSrc("slots/crystal-mana.png"), tcgSrc("slots/crystal-attack.png"), tcgSrc("slots/crystal-health.png"));
+  // THC Labz frames back every Season 1 card, including the library grid.
+  for (const f of Object.values(tcgLayout.thc?.frames || {})) jobs.push(tcgSrc(f.frame));
+  if (tcgLayout.thc?.background) jobs.push(tcgSrc(tcgLayout.thc.background));
+  await Promise.all(jobs);
+}
+
+/** BadBudz strain backgrounds + bud bands + logo, so the grid paints at once. */
+async function preloadBadBudz(set) {
+  if (!set) return;
+  const jobs = [tcgSrc(set.chrome?.logo || "thc/logo.png")];
+  for (const t of Object.values(set.chrome?.tiers || {})) {
+    jobs.push(tcgSrc(t.bg), tcgSrc(t.buds));
+  }
   await Promise.all(jobs);
 }
 await preloadChrome();
@@ -288,23 +345,135 @@ function fitName(ctx, text, maxW, size) {
   return s;
 }
 
-function drawNumber(ctx, n, cx, cy, h) {
+/**
+ * Stat numerals are chrome bitmaps (numbers/N.png) with no outline of their
+ * own, so they smear into whatever art sits behind the gem. Composite the whole
+ * number into a scratch buffer, stamp a black silhouette around it in eight
+ * directions, then lay the real digits on top.
+ */
+/**
+ * The numeral bitmaps are 16x20 canvases with the glyph floating inside a lot
+ * of transparent padding (a "1" is only 5px of ink). Drawing them whole made
+ * multi-digit stats look spaced out and sit low in their disc. Measure the
+ * union ink box across all ten digits once and blit from that instead, which
+ * gives tight, monospaced numerals on a shared baseline.
+ */
+let numTrim = null;
+function numeralTrim() {
+  if (numTrim) return numTrim;
+  const bits = [];
+  for (let d = 0; d < 10; d++) {
+    const b = tcgBit[`numbers/${d}.png`];
+    if (b) bits.push(b);
+  }
+  if (!bits.length) return null;
+  const w = bits[0].width, h = bits[0].height;
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const cx = cv.getContext("2d", { willReadFrequently: true });
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (const b of bits) {
+    cx.clearRect(0, 0, w, h);
+    cx.drawImage(b, 0, 0);
+    const d = cx.getImageData(0, 0, w, h).data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] > 8) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+  }
+  numTrim = x1 < 0
+    ? { x: 0, y: 0, w, h }
+    : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  return numTrim;
+}
+
+function drawNumber(ctx, n, cx, cy, h, maxW) {
   const s = String(n ?? "");
+  if (!s) return;
   const bits = [...s].map((d) => tcgBit[`numbers/${d}.png`]);
+  let hgt = h || 14;
   if (!bits.length || bits.some((b) => !b)) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    strokeText(ctx, s, cx, cy + 1, h || 14, "#fffef6", "#1a2748");
+    strokeText(ctx, s, cx, cy + 1, hgt, "#fffef6", "#08060c");
     return;
   }
-  const hgt = h || 14;
-  const wds = bits.map((b) => hgt * (b.width / b.height));
-  const total = wds.reduce((a, b) => a + b, 0) + Math.max(0, bits.length - 1);
-  let x = cx - total / 2;
-  bits.forEach((b, i) => {
-    ctx.drawImage(b, x, cy - hgt / 2, wds[i], hgt);
-    x += wds[i] + 1;
+  const trim = numeralTrim() || { x: 0, y: 0, w: bits[0].width, h: bits[0].height };
+  const aspect = trim.w / trim.h;
+  const measure = (height) => {
+    const kern = Math.max(0.6, height * 0.09);
+    const dw = height * aspect;
+    return { dw, kern, total: dw * bits.length + kern * (bits.length - 1) };
+  };
+  // Three-digit PVE stats (380/600) must shrink to sit inside the disc.
+  let m = measure(hgt);
+  if (maxW && m.total > maxW) {
+    hgt *= maxW / m.total;
+    m = measure(hgt);
+  }
+  const { dw, kern, total } = m;
+
+  // The scratch is built at device resolution, not card resolution. Composing a
+  // ~20px-tall numeral in card units and letting the card transform blow it up
+  // is what left the stat digits ragged, with a broken outline; building at the
+  // real output scale and drawing back down keeps them crisp at any card size.
+  const res = Math.max(1, Math.min(4, ctx.getTransform ? ctx.getTransform().a || 1 : 1));
+  // Outline thickness scales with the numeral so big stats keep a heavy ring.
+  const o = Math.max(1, Math.round(hgt * 0.11));
+  const pad = o + 2;
+  const R = (v) => Math.round(v * res);
+  if (!numScratch) numScratch = document.createElement("canvas");
+  const tw = Math.max(1, R(total) + R(pad) * 2);
+  const th = Math.max(1, R(hgt) + R(pad) * 2);
+  if (numScratch.width !== tw) numScratch.width = tw;
+  if (numScratch.height !== th) numScratch.height = th;
+  const tctx = numScratch.getContext("2d");
+  tctx.imageSmoothingEnabled = true;
+  tctx.imageSmoothingQuality = "high";
+  tctx.clearRect(0, 0, tw, th);
+  let nx = R(pad);
+  bits.forEach((b) => {
+    tctx.drawImage(b, trim.x, trim.y, trim.w, trim.h, nx, R(pad), R(dw), R(hgt));
+    nx += R(dw) + R(kern);
   });
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  const dw2 = tw / res, dh2 = th / res;
+  const dx = cx - total / 2 - pad;
+  const dy = cy - hgt / 2 - pad;
+
+  // Black silhouette of the digits, stamped around them as the outline.
+  if (!numOutline) numOutline = document.createElement("canvas");
+  if (numOutline.width !== tw) numOutline.width = tw;
+  if (numOutline.height !== th) numOutline.height = th;
+  const octx = numOutline.getContext("2d");
+  octx.imageSmoothingEnabled = false;
+  octx.clearRect(0, 0, tw, th);
+  octx.globalCompositeOperation = "source-over";
+  octx.drawImage(numScratch, 0, 0);
+  octx.globalCompositeOperation = "source-in";
+  octx.fillStyle = "#05040a";
+  octx.fillRect(0, 0, tw, th);
+  octx.globalCompositeOperation = "source-over";
+
+  // A soft drop shadow first, so the numeral reads over bright art too.
+  ctx.globalAlpha = 0.55;
+  ctx.drawImage(numOutline, dx, dy + o * 1.5, dw2, dh2);
+  ctx.globalAlpha = 1;
+  for (let a = 0; a < 8; a++) {
+    const ang = (a * Math.PI) / 4;
+    ctx.drawImage(numOutline, dx + Math.cos(ang) * o, dy + Math.sin(ang) * o, dw2, dh2);
+  }
+  ctx.drawImage(numScratch, dx, dy, dw2, dh2);
+  ctx.restore();
 }
 
 function drawGem(ctx, gem, n) {
@@ -314,7 +483,7 @@ function drawGem(ctx, gem, n) {
   if (icon) {
     const s = r * 2 + 4;
     ctx.drawImage(icon, gem.cx - s / 2, gem.cy - s / 2, s, s);
-  } else {
+  } else if (gem.fill) {
     ctx.beginPath();
     ctx.arc(gem.cx, gem.cy, r, 0, Math.PI * 2);
     ctx.fillStyle = gem.fill;
@@ -323,7 +492,10 @@ function drawGem(ctx, gem, n) {
     ctx.strokeStyle = "#1a1008";
     ctx.stroke();
   }
-  drawNumber(ctx, n, gem.cx, gem.cy, gem.size || 14);
+  // No icon and no fill means the frame already carries the disc (the THC
+  // frames have them moulded in) — just set the numeral into it, clamped to
+  // the disc's inner width so long PVE stats can't spill onto the frame.
+  drawNumber(ctx, n, gem.cx, gem.cy, gem.size || 14, r * 2 * 0.64);
 }
 
 function wrapLines(ctx, text, maxW) {
@@ -340,6 +512,12 @@ function wrapLines(ctx, text, maxW) {
 }
 
 let tintScratch = null;
+let numScratch = null;
+let numOutline = null;
+
+function artWindow(L, fac) {
+  return (L.factionArt && (L.factionArt[fac] || L.factionArt.other)) || L.art;
+}
 function outlineColor(animKey) {
   const k = String(animKey || "");
   if (k === "hit") return "#ff3028";
@@ -349,56 +527,421 @@ function outlineColor(animKey) {
   return "#120a06";
 }
 
+/**
+ * Where the actual pixels live inside a sheet frame. Plist frame rects carry a
+ * lot of empty padding — the declared rect is the animation's full stage, not
+ * the character — so fitting art to the rect left every sprite small and
+ * floating in its window. Measured once per (sheet, rect) and cached.
+ */
+let inkScratch = null;
+const inkCache = new WeakMap();
+function spriteInk(img, fr) {
+  if (!img || !fr || !fr.w || !fr.h) return null;
+  let per = inkCache.get(img);
+  if (!per) { per = new Map(); inkCache.set(img, per); }
+  const key = `${fr.x}|${fr.y}|${fr.w}|${fr.h}`;
+  if (per.has(key)) return per.get(key);
+  let box = null;
+  try {
+    const w = Math.max(1, Math.round(fr.w)), h = Math.max(1, Math.round(fr.h));
+    if (!inkScratch) inkScratch = document.createElement("canvas");
+    if (inkScratch.width < w) inkScratch.width = w;
+    if (inkScratch.height < h) inkScratch.height = h;
+    const c = inkScratch.getContext("2d", { willReadFrequently: true });
+    c.clearRect(0, 0, w, h);
+    c.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, w, h);
+    const d = c.getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] > 12) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    if (x1 >= x0 && y1 >= y0) box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  } catch {
+    // A sheet we cannot read pixels from still has to render — fall back to the
+    // declared rect rather than dropping the sprite.
+    box = null;
+  }
+  per.set(key, box);
+  return box;
+}
+
+/**
+ * The ink window shared by every frame of one clip, in frame-local coordinates.
+ * Scaling each frame to its own ink box would make the sprite pulse and hop as
+ * the animation played, so the union is measured once and every frame is
+ * cropped to it — the sprite fills its box and still moves inside the clip.
+ *
+ * Every frame is composited into one scratch buffer first, so a 30-frame clip
+ * costs a single pixel readback rather than thirty.
+ */
+const clipWindows = new WeakMap();
+function clipWindow(pack, animKey, frames) {
+  if (!frames || !frames.length) return null;
+  let per = clipWindows.get(pack);
+  if (!per) { per = new Map(); clipWindows.set(pack, per); }
+  const key = String(animKey);
+  if (per.has(key)) return per.get(key);
+  let box = null;
+  try {
+    const w = Math.max(1, Math.round(Math.max(...frames.map((f) => f.w || 0))));
+    const h = Math.max(1, Math.round(Math.max(...frames.map((f) => f.h || 0))));
+    if (!inkScratch) inkScratch = document.createElement("canvas");
+    if (inkScratch.width < w) inkScratch.width = w;
+    if (inkScratch.height < h) inkScratch.height = h;
+    const c = inkScratch.getContext("2d", { willReadFrequently: true });
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, w, h);
+    for (const f of frames) {
+      const src = f.img || pack.img;
+      if (!src || !f.w || !f.h) continue;
+      c.drawImage(src, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+    }
+    const d = c.getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] > 12) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    if (x1 >= x0 && y1 >= y0) box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  } catch {
+    // A sheet we cannot read pixels from still has to render — fall back to the
+    // declared rect rather than dropping the sprite.
+    box = null;
+  }
+  per.set(key, box);
+  return box;
+}
+
+/** Crop a sheet frame down to the clip's shared ink window. */
+function framedBy(fr, win) {
+  if (!fr) return fr;
+  if (!win) return fr;
+  return { img: fr.img, x: fr.x + win.x, y: fr.y + win.y, w: win.w, h: win.h };
+}
+
+/**
+ * Scale2x / EPX. Doubling pixel art with nearest neighbour keeps the staircase
+ * on every diagonal, which is what makes a Duelyst sprite blown up to card size
+ * look chunky. Scale2x resolves those staircases into clean 45-degree steps and
+ * leaves flat colour and hard edges exactly where they were, so the result is
+ * bigger *and* cleaner rather than either blocky or blurred.
+ */
+function scale2x(src) {
+  const w = src.width, h = src.height;
+  const s = new Uint32Array(src.data.buffer);
+  const dw = w * 2, dh = h * 2;
+  const out = new ImageData(dw, dh);
+  const d = new Uint32Array(out.data.buffer);
+  for (let y = 0; y < h; y++) {
+    const up = (y > 0 ? y - 1 : 0) * w;
+    const mid = y * w;
+    const dn = (y < h - 1 ? y + 1 : h - 1) * w;
+    for (let x = 0; x < w; x++) {
+      const P = s[mid + x];
+      const A = s[up + x];
+      const B = s[mid + (x < w - 1 ? x + 1 : w - 1)];
+      const C = s[mid + (x > 0 ? x - 1 : 0)];
+      const D = s[dn + x];
+      let e0 = P, e1 = P, e2 = P, e3 = P;
+      if (C === A && C !== D && A !== B) e0 = A;
+      if (A === B && A !== C && B !== D) e1 = B;
+      if (D === C && D !== B && C !== A) e2 = C;
+      if (B === D && B !== A && D !== C) e3 = D;
+      const o = y * 2 * dw + x * 2;
+      d[o] = e0; d[o + 1] = e1; d[o + dw] = e2; d[o + dw + 1] = e3;
+    }
+  }
+  return out;
+}
+
+/**
+ * Scale2x is far too slow to redo on every repaint, so blown-up frames are
+ * memoised. Frames cycle, so one pass of an animation warms the cache and the
+ * rest is free; the bound keeps a long browse from growing without limit.
+ */
+let imgSeq = 0;
+const imgIds = new WeakMap();
+function imgId(img) {
+  let id = imgIds.get(img);
+  if (id === undefined) { id = ++imgSeq; imgIds.set(img, id); }
+  return id;
+}
+const upCache = new Map();
+const UP_MAX = 140;
+const UP_MAX_PX = 512; // don't blow a big frame up into a huge buffer
+
+function blownUp(img, fr, passes) {
+  const key = `${imgId(img)}|${fr.x}|${fr.y}|${fr.w}|${fr.h}|${passes}`;
+  const hit = upCache.get(key);
+  if (hit !== undefined) {
+    upCache.delete(key);
+    upCache.set(key, hit); // refresh LRU position
+    return hit;
+  }
+  let cv = null;
+  try {
+    const w = Math.max(1, Math.round(fr.w)), h = Math.max(1, Math.round(fr.h));
+    if (w * (1 << passes) <= UP_MAX_PX && h * (1 << passes) <= UP_MAX_PX) {
+      cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      let c = cv.getContext("2d", { willReadFrequently: true });
+      c.imageSmoothingEnabled = false;
+      c.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, w, h);
+      let data = c.getImageData(0, 0, w, h);
+      for (let p = 0; p < passes; p++) data = scale2x(data);
+      cv.width = data.width; cv.height = data.height;
+      c = cv.getContext("2d");
+      c.putImageData(data, 0, 0);
+    }
+  } catch {
+    cv = null; // unreadable sheet — the caller falls back to a plain blit
+  }
+  upCache.set(key, cv);
+  if (upCache.size > UP_MAX) upCache.delete(upCache.keys().next().value);
+  return cv;
+}
+
 function drawOutlinedSprite(ctx, img, fr, dx, dy, dw, dh, ring) {
+  if (!img || !fr || !fr.w || !fr.h || dw <= 0 || dh <= 0) return;
   const o = 1;
   const color = ring || "#120a06";
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
+  const sw = Math.max(1, Math.round(fr.w));
+  const sh = Math.max(1, Math.round(fr.h));
+  // How far the sprite has to stretch decides how much cleanup it needs: one
+  // Scale2x pass past 1.5x, two past 3x. Below that the frame is already bigger
+  // than the slot and a smooth downscale is all it wants.
+  const need = Math.max(dw / sw, dh / sh);
+  const passes = need >= 3 ? 2 : need >= 1.5 ? 1 : 0;
+  const up = passes ? blownUp(img, fr, passes) : null;
+  const src = up || img;
+  const sx = up ? 0 : fr.x, sy = up ? 0 : fr.y;
+  const bw = up ? up.width : sw, bh = up ? up.height : sh;
+
   if (!tintScratch) tintScratch = document.createElement("canvas");
-  const tw = Math.max(1, Math.ceil(dw) + 2);
-  const th = Math.max(1, Math.ceil(dh) + 2);
-  if (tintScratch.width !== tw) tintScratch.width = tw;
-  if (tintScratch.height !== th) tintScratch.height = th;
+  if (tintScratch.width !== bw) tintScratch.width = bw;
+  if (tintScratch.height !== bh) tintScratch.height = bh;
   const tctx = tintScratch.getContext("2d");
   tctx.imageSmoothingEnabled = false;
   tctx.globalCompositeOperation = "source-over";
-  tctx.clearRect(0, 0, tw, th);
-  tctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 1, 1, dw, dh);
+  tctx.clearRect(0, 0, bw, bh);
+  tctx.drawImage(src, sx, sy, bw, bh, 0, 0, bw, bh);
   tctx.globalCompositeOperation = "source-in";
   tctx.fillStyle = color;
-  tctx.fillRect(0, 0, tw, th);
+  tctx.fillRect(0, 0, bw, bh);
   tctx.globalCompositeOperation = "source-over";
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   for (const [ox, oy] of [[-o, 0], [o, 0], [0, -o], [0, o]]) {
-    ctx.drawImage(tintScratch, dx + ox - 1, dy + oy - 1);
+    ctx.drawImage(tintScratch, dx + ox, dy + oy, dw, dh);
   }
-  ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, dx, dy, dw, dh);
+  ctx.drawImage(src, sx, sy, bw, bh, dx, dy, dw, dh);
   ctx.restore();
 }
+
+/**
+ * Which chrome a card wears. Season 1 cards are the dopebudz.* city PVE
+ * opponents and use the THC Labz cannabis frames — the weed frame for the 12
+ * city bosses, gold for the goons — whose furniture (nameplate pill, bottom
+ * stat discs) sits differently from the Duelyst chrome.
+ */
+/** Per-city PVE backdrops (build-city-backgrounds.py). Filled during load. */
+let cityBackgrounds = {};
+
+/** Small stable string hash — used to vary chrome per card without randomness. */
+function hashCode(s) {
+  let h = 0;
+  for (let i = 0; i < String(s).length; i++) h = (h * 31 + String(s).charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function cardSkin(L, unit) {
+  const thc = L.thc;
+  const isThc = thc && (unit.source === "season-1" || unit.pveRole || unit.city);
+  if (isThc) {
+    const key = thc.byRarity?.[unit.rarity] || thc.default || "gold";
+    const f = thc.frames?.[key];
+    if (f) {
+      // Each dopebudz city gets its own backdrop. Seven pairs of Season 1 cards
+      // share portrait art upstream, and with one shared background they used
+      // to render pixel-identical; a per-city scene keeps every card distinct.
+      const cityBg = unit.city && cityBackgrounds[unit.city];
+      return {
+        thc: true,
+        frameKey: f.frame,
+        bgKey: cityBg || thc.background,
+        // Same-city, same-art pairs still exist (Manhattan has one), so mirror
+        // the backdrop for half of them on a stable hash of the card id.
+        bgFlip: !!cityBg && (hashCode(unit.id) & 1) === 1,
+        art: f.art,
+        name: f.name,
+        text: f.text,
+        scrim: f.scrim,
+        stats: f.stats,
+      };
+    }
+  }
+  // BadBudz wears the THC Labz frames too — the loudest strains get the leaf
+  // frame, the rest gold — but keeps its own strain background, panning bud
+  // band and logo mark, so it reads as a THC set rather than a Duelyst faction.
+  if (unit.badbudz && unit.chrome && thc) {
+    const key = ["legendary", "epic"].includes(unit.rarity) ? "weed" : "gold";
+    const f = thc.frames?.[key];
+    if (f) {
+      return {
+        thc: true,
+        badbudz: true,
+        chrome: unit.chrome,
+        frameKey: f.frame,
+        bgKey: unit.chrome.bg,
+        art: f.art,
+        name: f.name,
+        text: f.text,
+        scrim: f.scrim,
+        stats: f.stats,
+        // The centre pill is wide; a lone cost digit floats in it. Pair the
+        // numeral with the strain so the slot reads as a real type line.
+        pillLabel: unit.strain || unit.rarityLabel || "",
+      };
+    }
+  }
+  const fac = unit.faction || "other";
+  return {
+    thc: false,
+    frameKey: L.factionFrame[fac] || L.factionFrame.other,
+    bgKey: L.factionBg[fac] || L.factionBg.other,
+    art: artWindow(L, fac),
+    name: L.name,
+    text: L.text,
+    stats: L.stats,
+  };
+}
+
+/**
+ * Slow horizontal drift for the BadBudz bud wallpaper, as a phase in [0, 1).
+ *
+ * Speed is expressed as a **loop period**, not pixels per second. A fixed px/s
+ * meant the time to travel one wall depended on the wall's pixel size and the
+ * art window's height, which worked out to a 94-second loop — slow enough that
+ * the wallpaper read as a static texture. A period keeps the drift identical on
+ * every card, tier and canvas size no matter how those change.
+ *
+ * Driven by wall time so the pan keeps moving while a card sits idle, and the
+ * wall is mirror-tiled, so its left and right edges are the same column and the
+ * loop closes with no seam.
+ */
+const BUD_LOOP_SECONDS = 26;
+function budPan(wallW, phase = 0) {
+  const t = performance.now() / 1000 / BUD_LOOP_SECONDS + phase;
+  return (t % 1 + 1) % 1 * wallW;
+}
+
+/** The buds are texture behind the art, so they sit just above invisible. */
+const BUD_ALPHA = 0.16;
+
+/**
+ * How much of the art window the sprite fills. Sprites are fitted to their
+ * measured ink box, so this is a real margin rather than slack in the sheet.
+ */
+const ART_FILL = 0.98;
 
 function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
   if (!ctx || !unit || !tcgLayout) return;
   const L = tcgLayout;
-  const fac = unit.faction || "other";
+  const skin = cardSkin(L, unit);
   const stats = faceStats(unit);
   ctx.imageSmoothingEnabled = false;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   const scale = ctx.canvas.width / 195;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  const bg = tcgBit[L.factionBg[fac] || L.factionBg.other];
-  const frame = tcgBit[L.factionFrame[fac] || L.factionFrame.other];
-  const art = L.art;
-  if (bg) ctx.drawImage(bg, art.x, art.y, art.w, art.h);
+  const bg = tcgBit[skin.bgKey];
+  const frame = tcgBit[skin.frameKey];
+  const art = skin.art;
+  if (bg) {
+    // Cover-fill the whole art window so no card gap shows behind the sprite.
+    const bleed = L.artBleed ?? 2;
+    const bx = art.x - bleed, by = art.y - bleed;
+    const bw = art.w + bleed * 2, bh = art.h + bleed * 2;
+    const s = Math.max(bw / bg.width, bh / bg.height);
+    const dw = bg.width * s, dh = bg.height * s;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bx, by, bw, bh);
+    ctx.clip();
+    if (skin.bgFlip) {
+      // Mirror in place so the clip and bleed maths stay in card space.
+      ctx.translate(bx * 2 + bw, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(bg, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh);
+    if (skin.bgFlip) ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+    // BadBudz: the bud art is wallpaper, not a foreground row. It used to be a
+    // 46%-tall band pinned to the bottom, which cut the window in half with a
+    // hard horizontal edge and buried the sprite. The wall is built full-window
+    // and mirror-tiled, so it covers the whole art window at any pan offset and
+    // sits at a whisper of alpha — moving texture behind the art, not a wall of
+    // buds in front of it.
+    if (skin.badbudz) {
+      const wall = tcgBit[skin.chrome.buds];
+      if (wall) {
+        const wallW = wall.width * (bh / wall.height);
+        // Phase the pan per card, as a fraction of the loop. With a shared phase
+        // every BadBudz card showed the same bud in the same place at the same
+        // moment, which made the wallpaper read as part of the frame.
+        // Snap to whole device pixels: panning a bitmap by a fraction of a pixel
+        // resamples it every frame, which shimmers on screen and makes every
+        // exported frame differ everywhere.
+        const phase = (Math.abs(hashCode(unit.id)) % 1000) / 1000;
+        const off = Math.round(budPan(wallW, phase) * scale) / scale;
+        ctx.globalAlpha = BUD_ALPHA;
+        for (let x = -off; x < bw + wallW; x += wallW) {
+          ctx.drawImage(wall, bx + x, by, wallW, bh);
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(art.x - 1, art.y - 1, art.w + 2, art.h + 2);
+  ctx.clip();
   if (pack && pack.portrait && pack.img) {
-    const iw = pack.img.width, ih = pack.img.height;
-    const s = Math.min(art.w / iw, art.h / ih);
-    const dw = iw * s, dh = ih * s;
-    ctx.drawImage(pack.img, art.x + (art.w - dw) / 2, art.y + (art.h - dh) / 2, dw, dh);
+    const full = { x: 0, y: 0, w: pack.img.width, h: pack.img.height };
+    const ink = spriteInk(pack.img, full) || full;
+    const s = Math.min(art.w / ink.w, art.h / ink.h) * ART_FILL;
+    const dw = ink.w * s, dh = ink.h * s;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(pack.img, ink.x, ink.y, ink.w, ink.h,
+      art.x + (art.w - dw) / 2, art.y + (art.h - dh) / 2, dw, dh);
+    ctx.restore();
   }
   const frs = pack && (pack.anims[animKey] || pack.anims.breathing || pack.anims.idle) || [];
-  const fr = frs[frameI] || frs[0];
-  if (pack && fr && !pack.portrait) {
-    const s = Math.min(art.w / fr.w, art.h / fr.h) * 0.98;
+  const raw = frs[frameI] || frs[0];
+  if (pack && raw && !pack.portrait) {
+    // Fit to the clip's shared ink window, not the padded sheet rect, so the
+    // character actually fills the art box instead of floating small inside it.
+    const win = clipWindow(pack, animKey, frs);
+    const fr = framedBy(raw, win);
+    const s = Math.min(art.w / fr.w, art.h / fr.h) * ART_FILL;
     const dw = fr.w * s, dh = fr.h * s;
     const dx = art.x + (art.w - dw) / 2;
     const dy = art.y + art.h - dh;
@@ -408,19 +951,38 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     ctx.fill();
     drawOutlinedSprite(ctx, fr.img || pack.img, fr, dx, dy, dw, dh, outlineColor(animKey));
   }
+  ctx.restore();
   if (frame) ctx.drawImage(frame, 0, 0, 195, 284);
-  const nm = L.name;
-  const fonts = L.fonts || { name: 12, kind: 9, body: 10, gem: 14 };
+
+  // THC Labz mark, top-left, over the frame so the brand always reads.
+  if (skin.badbudz) {
+    const logo = tcgBit[skin.chrome.logo];
+    if (logo) {
+      const s = 26;
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.85)";
+      ctx.shadowBlur = 3;
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(logo, art.x + 3, art.y + 3, s, s);
+      ctx.restore();
+    }
+  }
+  const nm = skin.name;
+  const fonts = L.fonts || { name: 14, kind: 9, body: 10, gem: 18 };
   if (nm) {
     const label = String(unit.name || "");
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const ns = fitName(ctx, label, nm.w - 4, fonts.name);
-    strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff8dc", "#1a2748");
+    const ns = fitName(ctx, label, nm.w - 6, nm.size || fonts.name);
+    // Dark plate colours need a warm cream fill; the near-black stroke keeps the
+    // name legible on both the gold and the leaf frames.
+    strokeText(ctx, label, nm.x + nm.w / 2, nm.y + nm.h / 2 + 0.5, ns, "#fff8dc", "#120c04");
   }
   const onKeys = new Set((stats.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(stats.keywords || []));
   const ribbon = L.ribbon || { x: 16, y: 164, w: 163, h: 32 };
-  const styles = L.playStyles || [];
+  // The THC frames have no play-style ribbon slot — their art window runs down
+  // to the text panel — so the icon row is Duelyst-only.
+  const styles = skin.thc ? [] : (L.playStyles || []);
   const nIcon = styles.length || 6;
   const icon = 18;
   const gap = nIcon > 1 ? (ribbon.w - icon * nIcon) / (nIcon - 1) : 0;
@@ -455,44 +1017,96 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
     ctx.fillText(lab, x + icon / 2, y + icon + 1);
     ctx.restore();
   });
-  const t = L.text;
+  const t = skin.text;
   if (t) {
+    // The gold bevel and leaf textures are busy and mid-toned, so lay a soft
+    // dark plate under the copy first — the text then reads on every frame
+    // without having to shout with a heavier stroke.
+    const sc = skin.scrim;
+    if (sc) {
+      ctx.save();
+      ctx.fillStyle = `rgba(6, 10, 6, ${sc.alpha ?? 0.36})`;
+      const r = Math.min(sc.r ?? 12, sc.h / 2, sc.w / 2);
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(sc.x, sc.y, sc.w, sc.h, r);
+      else ctx.rect(sc.x, sc.y, sc.w, sc.h);
+      ctx.fill();
+      ctx.restore();
+    }
     const cx = t.x + t.w / 2;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const kindSize = fonts.kind || 8;
-    const metaSize = fonts.meta || 8;
-    const bodySize = fonts.body || 9;
-    let yy = t.y + 8;
-    let ks = kindSize;
-    ctx.font = `bold ${ks}px ${CARD_FONT}`;
-    while (ks > 6 && ctx.measureText(String(stats.kindLine || "")).width > t.w - 8) {
-      ks -= 0.5;
-      ctx.font = `bold ${ks}px ${CARD_FONT}`;
+    // The THC panels are mid-gold / deep green, so dark-on-gold washes out.
+    // Cream over a near-black stroke reads on both.
+    const bodyFill = skin.thc ? "#fff6dd" : "#1a1008";
+    const bodyStroke = skin.thc ? "#0b0803" : "#c9a227";
+    const headFill = skin.thc ? "#ffe9a8" : "#2a1408";
+    const headStroke = skin.thc ? "#0b0803" : "#c9a227";
+
+    const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const kindLine = String(stats.kindLine || "TROOP");
+    const passive = String(stats.passive || "").trim();
+    // Season 1 cards repeat their ability list as the passive text; showing both
+    // wastes the panel and pushes the font down for no information.
+    const passiveDupes = passive && norm(passive) === norm(kindLine);
+
+    const blocks = [
+      { text: kindLine, size: fonts.kind || 9, max: 2, fill: headFill, stroke: headStroke },
+      { text: String(stats.metaLine || ""), size: fonts.meta || 9, max: 1,
+        fill: headFill, stroke: headStroke },
+      { text: passiveDupes ? "" : passive, size: fonts.body || 10, max: 3,
+        fill: bodyFill, stroke: bodyStroke },
+    ].filter((b) => b.text);
+
+    // Shrink the whole block together until it fits the panel — long ability
+    // lists used to be squeezed onto one unreadable line that overran the frame.
+    const inner = t.w - 10;
+    let shrink = 1;
+    let laid = null;
+    for (let pass = 0; pass < 14; pass++) {
+      laid = [];
+      let total = 0;
+      for (const b of blocks) {
+        const size = Math.max(6, b.size * shrink);
+        ctx.font = `bold ${size}px ${CARD_FONT}`;
+        const lines = wrapLines(ctx, b.text, inner).slice(0, b.max);
+        laid.push({ lines, size, fill: b.fill, stroke: b.stroke });
+        total += lines.length * (size + 2.5);
+      }
+      if (total <= t.h - 4) break;
+      shrink -= 0.06;
     }
-    strokeText(ctx, String(stats.kindLine || "TROOP"), cx, yy, ks, "#2a1408", "#c9a227");
-    yy += kindSize + 6;
-    ctx.font = `bold ${metaSize}px ${CARD_FONT}`;
-    let ms = metaSize;
-    ctx.font = `bold ${ms}px ${CARD_FONT}`;
-    while (ms > 6 && ctx.measureText(String(stats.metaLine || "")).width > t.w - 8) {
-      ms -= 0.5;
-      ctx.font = `bold ${ms}px ${CARD_FONT}`;
-    }
-    strokeText(ctx, String(stats.metaLine || ""), cx, yy, ms, "#1a1008", "#c9a227");
-    yy += ms + 7;
-    const body = String(stats.passive || "").trim();
-    ctx.font = `bold ${bodySize}px ${CARD_FONT}`;
-    const maxH = t.y + t.h - 2;
-    for (const line of wrapLines(ctx, body, t.w - 8).slice(0, 2)) {
-      if (yy + bodySize > maxH) break;
-      strokeText(ctx, line, cx, yy, bodySize, "#1a1008", "#c9a227");
-      yy += bodySize + 3;
+
+    let yy = t.y + 6;
+    for (const b of laid) {
+      for (const line of b.lines) {
+        if (yy + b.size / 2 > t.y + t.h) break;
+        strokeText(ctx, line, cx, yy, b.size, b.fill, b.stroke);
+        yy += b.size + 2.5;
+      }
+      yy += 1.5;
     }
   }
-  drawGem(ctx, L.stats && L.stats.cost, stats.cost);
-  drawGem(ctx, L.stats && L.stats.attack, stats.attack);
-  drawGem(ctx, L.stats && L.stats.health, stats.health);
+  drawGem(ctx, skin.stats && skin.stats.attack, stats.attack);
+  drawGem(ctx, skin.stats && skin.stats.health, stats.health);
+  if (skin.pillLabel && skin.stats?.cost) {
+    // cost numeral hugs the pill's left; the strain fills the rest of it.
+    const g = skin.stats.cost;
+    const left = g.cx - 34;
+    drawNumber(ctx, stats.cost, left, g.cy, (g.size || 16) * 0.92, 22);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    const label = String(skin.pillLabel).toUpperCase();
+    let ls = 9;
+    ctx.font = `bold ${ls}px ${CARD_FONT}`;
+    while (ls > 6 && ctx.measureText(label).width > 62) {
+      ls -= 0.5;
+      ctx.font = `bold ${ls}px ${CARD_FONT}`;
+    }
+    strokeText(ctx, label, left + 14, g.cy + 0.5, ls, "#ffeaa0", "#0b0803");
+  } else {
+    drawGem(ctx, skin.stats && skin.stats.cost, stats.cost);
+  }
   if (showGrid) {
     ctx.strokeStyle = "rgba(255,226,122,0.35)";
     ctx.lineWidth = 0.5;
@@ -506,10 +1120,84 @@ function paintCard(ctx, unit, pack, animKey, frameI, showGrid) {
   }
 }
 
+/**
+ * Copy text to the clipboard, falling back to a hidden textarea + execCommand.
+ * The async Clipboard API needs a secure context and permission, and it rejects
+ * silently in a few embedded/preview browsers, so the card id must still be
+ * copyable there rather than the click looking broken.
+ */
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through to the legacy path */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:-9999px;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Flash the copy state on the id chip, then settle back. */
+let copyFlash = 0;
+async function copyUuid(el, uuid) {
+  const ok = await copyText(uuid);
+  el.classList.remove("copied", "failed");
+  // Force a reflow so re-clicking the same chip replays the transition.
+  void el.offsetWidth;
+  el.classList.add(ok ? "copied" : "failed");
+  if (!ok) {
+    // Nothing landed on the clipboard — leave the text selected so the keyboard
+    // shortcut in the label actually works.
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  clearTimeout(copyFlash);
+  copyFlash = setTimeout(() => el.classList.remove("copied", "failed"), 1600);
+}
+
+function showUuid(entity) {
+  const el = document.getElementById("uuid");
+  if (!el) return;
+  if (!entity || !entity.uuid) { el.hidden = true; el.innerHTML = ""; return; }
+  const n = (entity.art || []).length;
+  const clips = (entity.clipMeta || []).length;
+  const frames = entity.frameTotal || 0;
+  el.hidden = false;
+  el.innerHTML =
+    `<span>GRUDGE UUID</span>`
+    + `<code role="button" tabindex="0" title="Click to copy ${entity.uuid}">${entity.uuid}</code>`
+    + `<a href="${CARD_API}/v1/cards/${entity.uuid}" target="_blank" rel="noopener">card api</a>`
+    + `<a href="${CARD_API}/v1/cards/${entity.uuid}/art" target="_blank" rel="noopener">${n} art asset${n === 1 ? "" : "s"}</a>`
+    + (clips
+      ? `<a href="${CARD_API}/v1/cards/${entity.uuid}/clips" target="_blank" rel="noopener">${clips} clips · ${frames} frames</a>`
+      : "");
+  const chip = el.querySelector("code");
+  chip.addEventListener("click", () => copyUuid(chip, entity.uuid));
+  chip.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyUuid(chip, entity.uuid); }
+  });
+}
+
 function drawFace() {
   const pack = current && packs.get(current.id);
   const c = document.getElementById("face");
   if (!c || !pack || !tcgLayout) return;
+  if (!ensureSkinChrome(current, drawFace)) return;
   paintCard(c.getContext("2d"), current, pack, playing.key, playing.i, !!window.__cardGrid);
 }
 
@@ -519,9 +1207,56 @@ const [cat, duel] = await Promise.all([
 ]);
 const heroes = cat.heroes || [];
 const cards = cat.cards || [];
-const units = duel.units || [];
+const allUnits = duel.units || [];
+
+// THC Labz BadBudz — the Magmar roster re-skinned as a custom battle-card set:
+// strain names, a rarity ladder and its own panning bud chrome. The sprites are
+// the same Duelyst sheets, so those units move out of the Duelyst tab and live
+// here instead rather than appearing twice.
+const badbudzSet = await fetch("/catalog/badbudz.json")
+  .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+const badbudz = (badbudzSet?.cards || []).map((c) => {
+  const u = allUnits.find((x) => x.id === c.id);
+  return { ...u, ...c, badbudz: true };
+});
+const badbudzIds = new Set(badbudz.map((c) => c.id));
+const units = badbudz.length ? allUnits.filter((u) => !badbudzIds.has(u.id)) : allUnits;
+await preloadBadBudz(badbudzSet);
+await Promise.all(Object.values(cityBackgrounds).map((rel) => tcgSrc(rel)));
+
+// Grudge UUID registry — one canonical id + art set per card, shared with
+// the /v1/cards API. Missing file just means no ids shown (never a crash).
+const registry = await fetch("/catalog/cards.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+// Measured frame counts for the GrudaWars CraftPix strips (see stripFrames).
+const gwClipMeta = await fetch("/catalog/grudawars-clips.json")
+  .then((r) => (r.ok ? r.json() : null)).then((j) => j?.units || {}).catch(() => ({}));
+// Per-city PVE backdrops (build-city-backgrounds.py).
+cityBackgrounds = await fetch("/tcg-chrome/cities/index.json")
+  .then((r) => (r.ok ? r.json() : null)).then((j) => j?.byCity || {}).catch(() => ({}));
+const uuidByKey = new Map((registry?.cards || []).map((c) => [c.sourceKey, c]));
+function attachUuid(list, prefix) {
+  for (const row of list) {
+    const rec = uuidByKey.get(`${prefix}${row.id}`);
+    if (rec) {
+      row.uuid = rec.uuid;
+      row.art = rec.art;
+      row.clipMeta = rec.clips;
+      row.frameTotal = rec.frameTotal;
+    }
+  }
+}
+attachUuid(units, "duelyst:");
+attachUuid(badbudz, "duelyst:");
+attachUuid(heroes, "grudawars:");
+for (const c of cards) {
+  const rec = uuidByKey.get(`season1:${c.city || "none"}:${c.id}`);
+  if (rec) { c.uuid = rec.uuid; c.art = rec.art; c.clipMeta = rec.clips; c.frameTotal = rec.frameTotal; }
+}
+
 document.getElementById("stat").textContent =
-  `${units.length} Duelyst · ${cards.length} city PVE · ${heroes.length} GrudaWars`;
+  `${units.length} Duelyst · ${cards.length} Dopebudz city PVE · ${heroes.length} GrudaWars`
+  + (badbudz.length ? ` · ${badbudz.length} BadBudz` : "")
+  + (registry ? ` · ${registry.total} UUIDs` : "");
 
 let mode = "duelyst";
 let faction = "lyonar";
@@ -546,9 +1281,18 @@ const SLASH_BY_FACTION = {
   other: "slashRedLg",
 };
 let vfxCatalog = null;
+// The catalog lives on info.*, but the sprite PNGs come from its sourceBase:
+// info.* answers /sprites/** with its SPA shell (200 + HTML), so every effect
+// would decode-fail and no slash/burst/projectile would ever draw.
+let vfxBase = INFO_VFX;
+function absorbVfx(j) {
+  vfxCatalog = j.effects || {};
+  if (j.sourceBase) vfxBase = String(j.sourceBase).replace(/\/$/, "");
+  return vfxCatalog;
+}
 fetch(INFO_VFX + "/api/v1/effectSprites.json")
   .then((r) => r.json())
-  .then((j) => { vfxCatalog = j.effects || {}; })
+  .then(absorbVfx)
   .catch(() => {});
 
 function sheetFrames(img, def) {
@@ -570,17 +1314,22 @@ async function loadInfoFx(key) {
   if (fxSheets[key]) return fxSheets[key];
   if (!vfxCatalog) {
     try {
-      const j = await (await fetch(INFO_VFX + "/api/v1/effectSprites.json")).json();
-      vfxCatalog = j.effects || {};
+      absorbVfx(await (await fetch(INFO_VFX + "/api/v1/effectSprites.json")).json());
     } catch { return []; }
   }
   const def = vfxCatalog && vfxCatalog[key];
   if (!def || !def.src) return [];
-  const r = await fetch(INFO_VFX + def.src);
-  if (!r.ok) return [];
-  const img = await createImageBitmap(await r.blob());
-  fxSheets[key] = sheetFrames(img, def);
-  return fxSheets[key];
+  const url = /^https?:/i.test(def.src) ? def.src : vfxBase + def.src;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return [];
+    const img = await createImageBitmap(await r.blob());
+    fxSheets[key] = sheetFrames(img, def);
+    return fxSheets[key];
+  } catch {
+    // A bad effect sheet must never break the card render.
+    return [];
+  }
 }
 
 function filtered() {
@@ -594,6 +1343,16 @@ function filtered() {
   }
   if (mode === "heroes") {
     return heroes.filter((h) => !q || h.name.toLowerCase().includes(q) || Object.keys(h.clips || {}).join(" ").includes(q));
+  }
+  if (mode === "badbudz") {
+    return badbudz.filter((c) => {
+      if (faction !== "all" && c.rarity !== faction) return false;
+      if (role !== "all" && c.role !== role) return false;
+      if (kit !== "all" && !(c.kits || []).includes(kit)) return false;
+      if (q && !`${c.name} ${c.strain} ${c.rarityLabel} ${(c.abilityNames || []).join(" ")} ${c.duelystName}`
+        .toLowerCase().includes(q)) return false;
+      return true;
+    });
   }
   return units.filter((u) => {
     if (faction !== "all" && u.faction !== faction) return false;
@@ -625,7 +1384,31 @@ function paintCodex() {
     document.getElementById("kits").innerHTML = "";
     return;
   }
-  const facs = [["all", units.length], ...Object.entries(duel.factions || {})];
+  if (mode === "badbudz") {
+    // Rarity *is* the strain ladder here, so it takes the faction rail.
+    const tiers = badbudzSet?.tiers || [];
+    const rows = [["all", "All strains", badbudz.length, "#8de84f"],
+      ...tiers.map((t) => [t.key, t.label, badbudz.filter((c) => c.rarity === t.key).length,
+        RARITY_COLOR[t.key] || "#8de84f"])];
+    document.getElementById("factions").innerHTML = rows.map(([k, label, n, col]) =>
+      `<button class="chip ${k === faction ? "on" : ""}" data-f="${k}">
+        <span><i class="dot" style="background:${col}"></i>${label}</span>
+        <span>${n}</span></button>`
+    ).join("");
+    const roles = ["all", ...[...new Set(badbudz.map((c) => c.role))]];
+    document.getElementById("roles").innerHTML = roles.map((r) =>
+      `<button class="${r === role ? "on" : ""}" data-r="${r}">${r}</button>`
+    ).join("");
+    document.getElementById("kits").innerHTML = ["all", "core", "caster", "projectile", "special"]
+      .map((k) => `<button class="${k === kit ? "on" : ""}" data-k="${k}">${k}</button>`).join("");
+    return;
+  }
+  // Count factions from the units themselves. The baked `duel.factions` map is
+  // stale (it lists `other: 2` for what are really `critter` units), which
+  // rendered a dead chip that filtered to nothing.
+  const tally = new Map();
+  for (const u of units) tally.set(u.faction, (tally.get(u.faction) || 0) + 1);
+  const facs = [["all", units.length], ...[...tally.entries()].sort((a, b) => b[1] - a[1])];
   document.getElementById("factions").innerHTML = facs.map(([f, n]) =>
     `<button class="chip ${f === faction ? "on" : ""}" data-f="${f}">
       <span><i class="dot" style="background:${FAC_COLOR[f] || "#888"}"></i>${f}</span>
@@ -657,9 +1440,10 @@ function renderLibrary() {
       return `<article class="card ${on}" data-id="${item.id}" style="--fac:${col}">
         <div class="art"><canvas data-id="${item.id}" width="390" height="568"></canvas></div></article>`;
     }
-    if (mode === "cards") {
+    if (mode === "badbudz") {
+      const col = RARITY_COLOR[item.rarity] || "#8de84f";
       const on = current && current.id === item.id ? "sel" : "";
-      return `<article class="card ${on}" data-id="${item.id}">
+      return `<article class="card ${on}" data-id="${item.id}" style="--fac:${col}">
         <div class="art"><canvas data-id="${item.id}" width="390" height="568"></canvas></div></article>`;
     }
     const on = current && current.id === item.id ? "sel" : "";
@@ -686,6 +1470,11 @@ const io = new IntersectionObserver((ents) => {
       if (c) loadCardPortrait(c).then(() => drawCard(id)).catch(() => {});
       continue;
     }
+    if (mode === "badbudz") {
+      const c = badbudz.find((x) => x.id === id);
+      if (c) loadPack(c).then(() => drawCard(id)).catch(() => {});
+      continue;
+    }
     const u = units.find((x) => x.id === id);
     if (u) loadPack(u).then(() => drawCard(id)).catch(() => {});
   }
@@ -710,14 +1499,36 @@ function release() {
   if (n) n();
 }
 
+/**
+ * A CDN edge can hold a stale/corrupt copy of an asset (a 200 whose body is an
+ * HTML error page), which decodes to nothing and would blank the whole card.
+ * Retry once past the cache before giving up.
+ */
+async function fetchImage(url) {
+  try {
+    return await createImageBitmap(await (await fetch(url)).blob());
+  } catch {
+    const bust = url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now();
+    return createImageBitmap(await (await fetch(bust, { cache: "reload" })).blob());
+  }
+}
+
+async function fetchText(url) {
+  const r = await fetch(url);
+  const body = await r.text();
+  if (r.ok && !/^\s*<!doctype html/i.test(body)) return body;
+  const bust = url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now();
+  return (await fetch(bust, { cache: "reload" })).text();
+}
+
 async function loadPack(u) {
   if (packs.has(u.id)) return packs.get(u.id);
   if (inflight.has(u.id)) return inflight.get(u.id);
   const job = (async () => {
     await slot();
     try {
-      const xml = await fetch(u.plist).then((r) => r.text());
-      const img = await createImageBitmap(await (await fetch(u.sheet)).blob());
+      const xml = await fetchText(u.plist);
+      const img = await fetchImage(u.sheet);
       const pack = { img, anims: groupAnims(parsePlist(xml)), unit: u };
       packs.set(u.id, pack);
       return pack;
@@ -730,7 +1541,21 @@ async function loadPack(u) {
   return job;
 }
 
-function stripFrames(img) {
+/**
+ * CraftPix strips are not always square-celled, so guessing
+ * `round(width / min(w,h))` mis-slices 141 of 542 GrudaWars strips (it yields
+ * fractional frame widths like 184.8px and every frame after the first is
+ * drawn offset). `catalog/grudawars-clips.json` carries the measured frame
+ * count per strip; the guess stays only as a last-resort fallback.
+ */
+function stripFrames(img, meta) {
+  if (meta && meta.frames > 0) {
+    const fw = meta.fw || img.width / meta.frames;
+    const fh = meta.fh || img.height;
+    const out = [];
+    for (let i = 0; i < meta.frames; i++) out.push({ img, x: i * fw, y: 0, w: fw, h: fh });
+    return out;
+  }
   const w = img.width, h = img.height;
   const cell = Math.min(w, h);
   const cols = w >= h ? Math.max(1, Math.round(w / cell)) : 1;
@@ -755,13 +1580,13 @@ function gwClipUrl(url) {
 async function loadGwPack(h) {
   if (packs.has(h.id)) return packs.get(h.id);
   const anims = {};
+  const meta = gwClipMeta[h.id] || {};
   let first = null;
   for (const [clip, url] of Object.entries(h.clips || {})) {
-    const r = await fetch(gwClipUrl(url));
-    if (!r.ok) continue;
-    const img = await createImageBitmap(await r.blob());
+    let img;
+    try { img = await fetchImage(gwClipUrl(url)); } catch { continue; }
     if (!first) first = img;
-    anims[clip.toLowerCase()] = stripFrames(img);
+    anims[clip.toLowerCase()] = stripFrames(img, meta[clip]);
   }
   const pack = { img: first, anims, unit: h, kind: "grudawars" };
   packs.set(h.id, pack);
@@ -770,10 +1595,20 @@ async function loadGwPack(h) {
 
 async function loadCardPortrait(c) {
   if (packs.has(c.id)) return packs.get(c.id);
-  const src = LOCAL ? (c.image || c.mintImage) : (c.mintImage || c.image);
-  const r = await fetch(src);
-  if (!r.ok) throw new Error("card art " + src);
-  const img = await createImageBitmap(await r.blob());
+  // Cut first: 20 of the Season 1 portraits ship on a flat studio plate, and the
+  // keyed version is the only one that lets the card's city backdrop show. Then
+  // the card-sized WebP — the full-res mint portraits average 1.7 MB (122 MB
+  // across the set) — with mint and the external host as last resorts.
+  const sources = [...new Set([c.cutImage, c.cardImage, c.mintImage, c.image].filter(Boolean))];
+  let img = null;
+  let lastErr = null;
+  for (const src of sources) {
+    try {
+      img = await fetchImage(src);
+      break;
+    } catch (e) { lastErr = e; }
+  }
+  if (!img) throw new Error("card art " + (lastErr?.message || sources.join(", ")));
   const pack = { img, portrait: true, anims: { idle: [{ img, x: 0, y: 0, w: img.width, h: img.height }] }, unit: c };
   packs.set(c.id, pack);
   return pack;
@@ -787,7 +1622,6 @@ function preferAnim(anims) {
 function drawFit(ctx, img, fr, w, h, animKey, frameI, frameCount) {
   ctx.clearRect(0, 0, w, h);
   if (!fr || !img) return;
-  ctx.imageSmoothingEnabled = false;
   const pad = Math.round(Math.min(w, h) * 0.06);
   const s = Math.min((w - pad * 2) / fr.w, (h - pad * 2) / fr.h);
   const dw = fr.w * s, dh = fr.h * s;
@@ -808,11 +1642,51 @@ function sizeBreathe() {
   c.height = Math.max(64, Math.floor(box.height * dpr));
 }
 
+/**
+ * Make sure a card's frame, background and set chrome are decoded before it is
+ * painted, fetching them once if not. Loading used to be the selecting code's
+ * job, which meant any path that forgot — GrudaWars heroes did — painted a card
+ * with no frame at all, and grid tiles drew bare until something else happened
+ * to pull the same faction's chrome in.
+ */
+const chromePending = new Set();
+const chromeMissing = new Set();
+function ensureSkinChrome(unit, redraw) {
+  if (!tcgLayout || !unit) return true;
+  const skin = cardSkin(tcgLayout, unit);
+  const need = [
+    skin.bgKey,
+    skin.frameKey,
+    skin.badbudz && skin.chrome && skin.chrome.buds,
+    skin.badbudz && skin.chrome && skin.chrome.logo,
+  ].filter((k) => k && !tcgBit[k] && !chromeMissing.has(k));
+  if (!need.length) return true;
+  const key = need.join("|");
+  if (!chromePending.has(key)) {
+    chromePending.add(key);
+    Promise.all(need.map(tcgSrc)).then(() => {
+      // An asset that never arrives must not be retried forever — drawFace runs
+      // on the animation loop, so a 404 would turn into a fetch every frame.
+      for (const k of need) if (!tcgBit[k]) chromeMissing.add(k);
+      chromePending.delete(key);
+      if (redraw) redraw();
+    }, () => {
+      for (const k of need) chromeMissing.add(k);
+      chromePending.delete(key);
+      if (redraw) redraw();
+    });
+  }
+  return false;
+}
+
 function drawCard(id) {
   const pack = packs.get(id);
   const canvas = document.querySelector(`canvas[data-id="${id}"]`);
-  const unit = units.find((u) => u.id === id) || heroes.find((h) => h.id === id) || cards.find((c) => c.id === id);
+  const unit = (mode === "badbudz" ? badbudz.find((c) => c.id === id) : null)
+    || units.find((u) => u.id === id) || heroes.find((h) => h.id === id)
+    || cards.find((c) => c.id === id) || badbudz.find((c) => c.id === id);
   if (!pack || !canvas || !unit) return;
+  if (!ensureSkinChrome(unit, () => drawCard(id))) return;
   paintCard(canvas.getContext("2d"), unit, pack, preferAnim(pack.anims), 0, false);
 }
 
@@ -824,7 +1698,10 @@ function drawStage() {
   const frames = pack.anims[playing.key] || pack.anims.breathing || pack.anims.idle || [];
   if (!frames.length) return;
   if (playing.i >= frames.length) playing.i = playing.loop ? 0 : frames.length - 1;
-  drawFit(ctx, pack.img, frames[playing.i], c.width, c.height, playing.key, playing.i, frames.length);
+  // Same clip-wide ink window the card uses, so the stage sprite fills the
+  // viewport instead of sitting small inside the sheet's padding.
+  const win = clipWindow(pack, playing.key, frames);
+  drawFit(ctx, pack.img, framedBy(frames[playing.i], win), c.width, c.height, playing.key, playing.i, frames.length);
   if (overlay.on) {
     if (overlay.kind === "plist") {
       const fr = overlay.frames[overlay.i];
@@ -911,6 +1788,7 @@ async function selectUnit(u) {
   playing.i = 0;
   playing.loop = LOOP_CLIPS.has(playing.key) || playing.key === "walk";
   document.getElementById("title").textContent = u.name;
+  showUuid(u);
   document.getElementById("abil").textContent =
     `${u.faction} · ${u.role}${LOOK[u.faction] ? " — " + LOOK[u.faction] : ""} · ${names.map(clipLabel).join(" · ")}`;
   document.getElementById("anim").innerHTML = names.map((n) =>
@@ -942,6 +1820,43 @@ async function selectUnit(u) {
   }
 }
 
+async function selectBadBud(c) {
+  if (!c) return;
+  current = c;
+  document.querySelectorAll(".card").forEach((el) => el.classList.toggle("sel", el.dataset.id === c.id));
+  const pack = await loadPack(c);
+  const names = orderedClips(pack.anims);
+  playing.key = preferAnim(pack.anims);
+  playing.i = 0;
+  playing.loop = LOOP_CLIPS.has(playing.key) || playing.key === "walk";
+  document.getElementById("title").textContent = c.name;
+  showUuid(c);
+  document.getElementById("abil").textContent =
+    `${c.rarityLabel} · ${c.role} · ${(c.abilityNames || []).join(" · ")}`;
+  document.getElementById("anim").innerHTML = names.map((n) =>
+    `<option value="${n}" ${n === playing.key ? "selected" : ""}>${clipLabel(n)} (${pack.anims[n].length})</option>`
+  ).join("");
+  sizeBreathe();
+  paintAnimTabs(pack);
+  renderStrips(pack);
+  if (tcgLayout) {
+    await tcgSrc(c.chrome.bg);
+    await tcgSrc(c.chrome.buds);
+    await tcgSrc(c.chrome.logo);
+    for (const f of Object.values(tcgLayout.thc?.frames || {})) await tcgSrc(f.frame);
+    for (let n = 0; n < 10; n++) await tcgSrc(`numbers/${n}.png`);
+  }
+  drawStage();
+  drawFace();
+  drawCard(c.id);
+  const note = document.getElementById("fxNote");
+  if (note) {
+    note.textContent =
+      `${badbudzSet?.brand || "THC Labz"} ${badbudzSet?.name || "BadBudz"} — ${c.rarityLabel} tier. `
+      + `${c.strainBlurb} Sprite kit is the Duelyst ${c.duelystName} sheet; the strain background pans behind it.`;
+  }
+}
+
 async function selectHero(h) {
   if (!h) return;
   current = h;
@@ -952,6 +1867,7 @@ async function selectHero(h) {
   playing.i = 0;
   playing.loop = true;
   document.getElementById("title").textContent = h.name;
+  showUuid(h);
   document.getElementById("abil").textContent = `GrudaWars · ${names.map(clipLabel).join(" · ")}`;
   document.getElementById("anim").innerHTML = names.map((n) =>
     `<option value="${n}" ${n === playing.key ? "selected" : ""}>${clipLabel(n)} (${pack.anims[n].length})</option>`
@@ -974,26 +1890,31 @@ async function selectCard(c) {
   playing.i = 0;
   playing.loop = false;
   document.getElementById("title").textContent = c.name;
+  showUuid(c);
   document.getElementById("abil").textContent =
     `${c.city || "PVE"} · ${c.pveRole || c.role || "goon"} · ${(c.abilityNames || c.abilities || []).join(" · ")}`;
   document.getElementById("anim").innerHTML = `<option value="idle" selected>portrait</option>`;
   paintAnimTabs(pack);
   renderStrips(pack);
-  const fac = "other";
   if (tcgLayout) {
-    await tcgSrc(tcgLayout.factionBg[fac]);
-    await tcgSrc(tcgLayout.factionFrame[fac]);
-    for (const slot of tcgLayout.playStyles || []) {
-      await tcgSrc(slot.icon);
-      await tcgSrc(slot.badge);
-    }
+    // Season 1 cards wear the THC Labz chrome, picked by rarity, over their
+    // city's backdrop.
+    const skin = cardSkin(tcgLayout, c);
+    await tcgSrc(skin.bgKey);
+    await tcgSrc(skin.frameKey);
     for (let n = 0; n < 10; n++) await tcgSrc(`numbers/${n}.png`);
   }
   sizeBreathe();
   drawStage();
   drawFace();
   const note = document.getElementById("fxNote");
-  if (note) note.textContent = "Season 1 city PVE enemy — 12 cities × 5 goons + 1 boss. Not the Duelyst player mint.";
+  if (note) {
+    const roleWord = (c.pveRole || c.role) === "boss" ? "city boss" : "city goon";
+    note.textContent =
+      `Dopebudz city PVE opponent — ${roleWord} of ${c.city || "?"}. `
+      + "These are the AI enemies you fight in the dopebudz.* city PVE challenges "
+      + "(12 cities × 5 goons + 1 boss battle). Not a Duelyst player mint, not a player bag.";
+  }
 }
 
 function playKey(key) {
@@ -1040,6 +1961,261 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
+// ── Animated card export (APNG) ──────────────────────────────────────
+// Canvas only produces a still PNG, so the animation is assembled by hand:
+// render every frame of the clip, then splice the per-frame PNG streams into a
+// single animated PNG (acTL/fcTL/fdAT). No library, no server round-trip.
+const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const out = new Uint8Array(12 + data.length);
+  const dv = new DataView(out.buffer);
+  dv.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  dv.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+/** Split a PNG into its chunks so IHDR/IDAT can be reused. */
+function pngChunks(u8) {
+  const out = [];
+  let p = 8;
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  while (p < u8.length) {
+    const len = dv.getUint32(p);
+    const type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+    out.push({ type, data: u8.subarray(p + 8, p + 8 + len) });
+    p += 12 + len;
+    if (type === "IEND") break;
+  }
+  return out;
+}
+
+function concatBytes(parts) {
+  const out = new Uint8Array(parts.reduce((a, p) => a + p.length, 0));
+  let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+
+/**
+ * Build an APNG from same-sized RGBA frames.
+ *
+ * Only the sprite moves between frames, so each frame after the first is
+ * cropped to the region that actually changed (dispose NONE / blend SOURCE).
+ * That turns a ~1.7 MB full-frame card into a few hundred KB with identical
+ * output. Viewers without APNG support still show frame 0 as a normal PNG.
+ */
+async function buildApng(frames, delayMs, plays = 0) {
+  const { w, h } = frames[0];
+  const scratch = document.createElement("canvas");
+  const sctx = scratch.getContext("2d");
+
+  const encodeRegion = async (data, x, y, rw, rh) => {
+    scratch.width = rw;
+    scratch.height = rh;
+    const region = sctx.createImageData(rw, rh);
+    for (let row = 0; row < rh; row++) {
+      const src = ((y + row) * w + x) * 4;
+      region.data.set(data.subarray(src, src + rw * 4), row * rw * 4);
+    }
+    sctx.putImageData(region, 0, 0);
+    const blob = await new Promise((r) => scratch.toBlob(r, "image/png"));
+    return new Uint8Array(await blob.arrayBuffer());
+  };
+
+  /**
+   * Bounding box of pixels that differ between two RGBA buffers.
+   *
+   * Comparison is tolerant: the sprite is resampled, so pixels that should be
+   * static wobble by a level or two between frames. Treating that noise as a
+   * change grew every frame's region to the whole sprite and multiplied the
+   * file size. `a` is the previously *composited* state rather than the previous
+   * source frame, so ignored differences cannot accumulate — once a pixel has
+   * drifted past the tolerance it gets picked up and refreshed.
+   */
+  const DIFF_TOL = 3;
+  const dirtyRect = (a, b) => {
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+    for (let y = 0; y < h; y++) {
+      const row = y * w * 4;
+      for (let x = 0; x < w; x++) {
+        const i = row + x * 4;
+        if (Math.abs(a[i] - b[i]) > DIFF_TOL || Math.abs(a[i + 1] - b[i + 1]) > DIFF_TOL
+          || Math.abs(a[i + 2] - b[i + 2]) > DIFF_TOL || Math.abs(a[i + 3] - b[i + 3]) > DIFF_TOL) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return { x: 0, y: 0, w: 1, h: 1 };
+    return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+  };
+
+  const parts = [];
+  const first = pngChunks(await encodeRegion(frames[0].data, 0, 0, w, h));
+  const ihdr = first.find((c) => c.type === "IHDR");
+  if (!ihdr) throw new Error("frame 0 has no IHDR");
+  parts.push(new Uint8Array(PNG_SIG), pngChunk("IHDR", ihdr.data));
+  for (const c of first) {
+    if (["PLTE", "tRNS", "gAMA", "sRGB"].includes(c.type)) parts.push(pngChunk(c.type, c.data));
+  }
+
+  const actl = new Uint8Array(8);
+  const adv = new DataView(actl.buffer);
+  adv.setUint32(0, frames.length);
+  adv.setUint32(4, plays);
+  parts.push(pngChunk("acTL", actl));
+
+  let seq = 0;
+  const fcTL = (rect, num, den) => {
+    const d = new Uint8Array(26);
+    const v = new DataView(d.buffer);
+    v.setUint32(0, seq++);
+    v.setUint32(4, rect.w);
+    v.setUint32(8, rect.h);
+    v.setUint32(12, rect.x);
+    v.setUint32(16, rect.y);
+    v.setUint16(20, num);
+    v.setUint16(22, den);
+    d[24] = 0; // dispose: none
+    d[25] = 0; // blend: source
+    return pngChunk("fcTL", d);
+  };
+
+  parts.push(fcTL({ x: 0, y: 0, w, h }, delayMs, 1000));
+  parts.push(pngChunk("IDAT", concatBytes(
+    first.filter((c) => c.type === "IDAT").map((c) => c.data))));
+
+  // The composited state a viewer actually sees, which is what each frame must
+  // be diffed against once the comparison is tolerant.
+  const shown = new Uint8ClampedArray(frames[0].data);
+  for (let i = 1; i < frames.length; i++) {
+    const rect = dirtyRect(shown, frames[i].data);
+    const png = await encodeRegion(frames[i].data, rect.x, rect.y, rect.w, rect.h);
+    const idat = concatBytes(pngChunks(png).filter((c) => c.type === "IDAT").map((c) => c.data));
+    parts.push(fcTL(rect, delayMs, 1000));
+    const fd = new Uint8Array(4 + idat.length);
+    new DataView(fd.buffer).setUint32(0, seq++);
+    fd.set(idat, 4);
+    parts.push(pngChunk("fdAT", fd));
+    for (let row = 0; row < rect.h; row++) {
+      const off = ((rect.y + row) * w + rect.x) * 4;
+      shown.set(frames[i].data.subarray(off, off + rect.w * 4), off);
+    }
+  }
+
+  parts.push(pngChunk("IEND", new Uint8Array(0)));
+  return new Blob([concatBytes(parts)], { type: "image/png" });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function cardFilename(unit, ext) {
+  const base = String(unit.id || unit.slug || unit.name || "card")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${base}-card.${ext}`;
+}
+
+/** The clip a downloaded card should loop on: breathe, else idle, else longest. */
+function exportClip(pack) {
+  for (const k of ["breathing", "idle", "walk", "run"]) {
+    if (pack.anims[k] && pack.anims[k].length > 1) return k;
+  }
+  const longest = Object.entries(pack.anims).sort((a, b) => b[1].length - a[1].length)[0];
+  return longest ? longest[0] : playing.key;
+}
+
+const EXPORT_SCALE = 2; // 390x568 — plenty for a shared card, and half the bytes of the face
+
+async function exportCard(animated) {
+  const unit = current;
+  const pack = unit && packs.get(unit.id);
+  const note = document.getElementById("dlNote");
+  const btns = [document.getElementById("dlApng"), document.getElementById("dlPng")];
+  if (!unit || !pack || !tcgLayout) { if (note) note.textContent = "no card selected"; return; }
+
+  btns.forEach((b) => b && (b.disabled = true));
+  try {
+    const cv = document.createElement("canvas");
+    cv.width = 195 * EXPORT_SCALE;
+    cv.height = 284 * EXPORT_SCALE;
+    const cx = cv.getContext("2d", { willReadFrequently: true });
+    const still = async (msg) => {
+      paintCard(cx, unit, pack, playing.key, playing.i, false);
+      downloadBlob(await new Promise((r) => cv.toBlob(r, "image/png")), cardFilename(unit, "png"));
+      if (note) note.textContent = msg;
+    };
+
+    if (!animated) return await still("saved still .png");
+
+    const clip = exportClip(pack);
+    const count = (pack.anims[clip] || []).length;
+    if (count < 2) return await still("this card is a still portrait — saved a .png");
+
+    if (note) note.textContent = `rendering ${count} frames…`;
+    const raw = [];
+    for (let i = 0; i < count; i++) {
+      paintCard(cx, unit, pack, clip, i, false);
+      const img = cx.getImageData(0, 0, cv.width, cv.height);
+      raw.push({ data: img.data, w: cv.width, h: cv.height });
+      if (note) note.textContent = `rendering ${i + 1}/${count}…`;
+    }
+    if (note) note.textContent = "encoding animated png…";
+    const blob = await buildApng(raw, Math.round(STEP));
+    downloadBlob(blob, cardFilename(unit, "png"));
+    if (note) {
+      note.textContent =
+        `saved animated .png — ${clipLabel(clip)}, ${count} frames, ${(blob.size / 1024).toFixed(0)} KB`;
+    }
+  } catch (e) {
+    if (note) note.textContent = "export failed: " + e.message;
+  } finally {
+    btns.forEach((b) => b && (b.disabled = false));
+    drawFace();
+  }
+}
+
+document.getElementById("dlApng").onclick = () => exportCard(true);
+document.getElementById("dlPng").onclick = () => exportCard(false);
+
+/** Route a selection to the handler for the active tab. */
+function selectCurrent() {
+  if (!current) return;
+  if (mode === "duelyst") selectUnit(current);
+  else if (mode === "cards") selectCard(current);
+  else if (mode === "heroes") selectHero(current);
+  else if (mode === "badbudz") selectBadBud(current);
+}
+
 document.getElementById("src").onclick = (e) => {
   const b = e.target.closest("button[data-m]");
   if (!b) return;
@@ -1047,13 +2223,12 @@ document.getElementById("src").onclick = (e) => {
   document.querySelectorAll("#src button").forEach((x) => x.classList.toggle("on", x === b));
   faction = "all";
   role = "all";
+  kit = "all";
   if (mode === "duelyst") current = units.find((u) => u.role === "general") || units[0];
   else current = filtered()[0];
   paintCodex();
   renderLibrary();
-  if (mode === "duelyst" && current) selectUnit(current);
-  else if (mode === "cards" && current) selectCard(current);
-  else if (mode === "heroes" && current) selectHero(current);
+  selectCurrent();
 };
 document.getElementById("factions").onclick = (e) => {
   const b = e.target.closest("button[data-f]");
@@ -1063,9 +2238,7 @@ document.getElementById("factions").onclick = (e) => {
   if (mode === "duelyst") current = units.find((u) => (faction === "all" || u.faction === faction) && u.role === "general") || filtered()[0];
   else current = filtered()[0];
   renderLibrary();
-  if (mode === "duelyst" && current) selectUnit(current);
-  else if (mode === "cards" && current) selectCard(current);
-  else if (mode === "heroes" && current) selectHero(current);
+  selectCurrent();
 };
 document.getElementById("roles").onclick = (e) => {
   const b = e.target.closest("button[data-r]");
@@ -1085,9 +2258,11 @@ document.getElementById("q").oninput = (e) => { q = e.target.value.toLowerCase()
 document.getElementById("library").onclick = (e) => {
   const card = e.target.closest(".card[data-id]");
   if (!card) return;
-  if (mode === "duelyst") selectUnit(units.find((u) => u.id === card.dataset.id));
-  else if (mode === "cards") selectCard(cards.find((c) => c.id === card.dataset.id));
-  else selectHero(heroes.find((h) => h.id === card.dataset.id));
+  const id = card.dataset.id;
+  if (mode === "duelyst") selectUnit(units.find((u) => u.id === id));
+  else if (mode === "cards") selectCard(cards.find((c) => c.id === id));
+  else if (mode === "badbudz") selectBadBud(badbudz.find((c) => c.id === id));
+  else selectHero(heroes.find((h) => h.id === id));
 };
 document.getElementById("anim").onchange = (e) => {
   playKey(e.target.value);

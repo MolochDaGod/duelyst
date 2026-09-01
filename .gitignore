@@ -1,4 +1,4 @@
-.vercel/
+﻿.vercel/
 node_modules/
 _qa_*.png
 **/*.psd
@@ -7,3 +7,14 @@ export/
 world25d/
 .DS_Store
 Thumbs.db
+
+# QA output: verify-card-bg.py / browser screenshots
+screenshots/
+# Scan output: verify-art-urls.mjs
+lab/tools/art-url-report.json
+lab/tools/thc-frame-windows.json
+lab/tools/art-dupe-report.json
+# Scratch output from the lab tools (dry runs, staged uploads)
+lab/tools/_*
+__pycache__/
+
