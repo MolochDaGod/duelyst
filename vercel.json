@@ -37,6 +37,6 @@
     { "source": "/api/v1/cards-by-uuid", "destination": "/api/v1/cards-by-uuid.json" },
     { "source": "/api/v1/clips", "destination": "/api/v1/clips.json" },
     { "source": "/api/v1/vfx", "destination": "/api/v1/vfx.json" },
-    { "source": "/((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/).*)", "destination": "/index.html" }
+    { "source": "/:path((?!catalog/|tcg-chrome/|runtime/|api/|gw/|card-art/|info-vfx/|duelyst/).*)", "destination": "/index.html" }
   ]
 }
