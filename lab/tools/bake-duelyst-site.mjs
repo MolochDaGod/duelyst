@@ -86,12 +86,22 @@ try {
 } catch {
   console.warn("no catalog/pve-cutouts.json — run lab/tools/cut-pve-backgrounds.py");
 }
+// Growerz-NFT-style toonified remakes (toonify_growerz.py, run externally) —
+// highest-precedence portrait source; wins over cutouts/thumbs/mint.
+let pveGrowerz = {};
+try {
+  pveGrowerz = JSON.parse(fs.readFileSync(
+    path.resolve(here, "../../catalog/pve-growerz-overrides.json"), "utf8")).byCardId || {};
+} catch {
+  console.warn("no catalog/pve-growerz-overrides.json");
+}
 for (const c of pveCards) {
   if (pveThumbs[c.id]) c.cardImage = pveThumbs[c.id];
   // Twenty of the Season 1 portraits were painted on a flat studio plate, which
   // covered the card's own city backdrop with a slab of one flat colour. The cut
   // version is transparent-backed, so it goes first in the portrait chain.
   if (pveCutouts[c.id]) c.cutImage = pveCutouts[c.id];
+  if (pveGrowerz[c.id]) c.growerzImage = pveGrowerz[c.id];
 }
 const heroes = (STUDIO_CAT.heroes || []).map((h) => ({
   ...h,
@@ -198,7 +208,7 @@ try {
 // those rows carry the strain name and rarity rather than the Duelyst ones.
 execFileSync(process.execPath, [path.join(here, "build-badbudz.mjs")], { stdio: "inherit" });
 execFileSync(process.execPath, [path.join(here, "build-card-registry.mjs")], { stdio: "inherit" });
-for (const f of ["cards.json", "duelyst-clips.json", "vfx-index.json", "grudawars-clips.json", "pve-thumbs.json", "pve-cutouts.json", "badbudz.json"]) {
+for (const f of ["cards.json", "duelyst-clips.json", "vfx-index.json", "grudawars-clips.json", "pve-thumbs.json", "pve-cutouts.json", "pve-growerz-overrides.json", "badbudz.json"]) {
   const src = path.join(DUEL_REPO, "catalog", f);
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(DIST, "catalog", f));
 }

@@ -1595,11 +1595,12 @@ async function loadGwPack(h) {
 
 async function loadCardPortrait(c) {
   if (packs.has(c.id)) return packs.get(c.id);
-  // Cut first: 20 of the Season 1 portraits ship on a flat studio plate, and the
-  // keyed version is the only one that lets the card's city backdrop show. Then
-  // the card-sized WebP — the full-res mint portraits average 1.7 MB (122 MB
-  // across the set) — with mint and the external host as last resorts.
-  const sources = [...new Set([c.cutImage, c.cardImage, c.mintImage, c.image].filter(Boolean))];
+  // Growerz-style remake wins first when present. Then cut: 20 of the Season 1
+  // portraits ship on a flat studio plate, and the keyed version is the only
+  // one that lets the card's city backdrop show. Then the card-sized WebP —
+  // the full-res mint portraits average 1.7 MB (122 MB across the set) — with
+  // mint and the external host as last resorts.
+  const sources = [...new Set([c.growerzImage, c.cutImage, c.cardImage, c.mintImage, c.image].filter(Boolean))];
   let img = null;
   let lastErr = null;
   for (const src of sources) {
