@@ -226,13 +226,14 @@ for (const u of duel.units || []) {
 for (const c of cat.cards || []) {
   const key = `season1:${c.city || "none"}:${c.id}`;
   seq += 1;
-  // Art order matches what the site loads: the keyed cutout first where one
-  // exists (20 portraits ship on a flat studio plate that hides the card's own
-  // backdrop), then the card-sized WebP (the mint originals average 1.7 MB
-  // each), then the full-res mint, then the external card-art host, which 404s
-  // for 47 of the 72 cards.
+  // Art order matches what the site loads: the Growerz-style remake first where
+  // one exists, then the keyed cutout (20 portraits ship on a flat studio plate
+  // that hides the card's own backdrop), then the card-sized WebP (the mint
+  // originals average 1.7 MB each), then the full-res mint, then the external
+  // card-art host, which 404s for 47 of the 72 cards.
   const art = [
-    { role: "portrait", url: absUrl(c.cutImage || c.cardImage || c.mintImage || c.image, CARD_ART_CDN) },
+    { role: "portrait", url: absUrl(c.growerzImage || c.cutImage || c.cardImage || c.mintImage || c.image, CARD_ART_CDN) },
+    { role: "portrait-classic", url: c.growerzImage ? absUrl(c.cutImage || c.cardImage, CARD_ART_CDN) : null },
     { role: "portrait-plate", url: c.cutImage ? absUrl(c.cardImage, CARD_ART_CDN) : null },
     { role: "portrait-full", url: c.cardImage ? absUrl(c.mintImage, CARD_ART_CDN) : null },
     { role: "portrait-alt", url: c.mintImage ? absUrl(c.image, CARD_ART_CDN) : null },
