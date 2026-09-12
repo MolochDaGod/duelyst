@@ -1,0 +1,23 @@
+{
+  "id": "gamewithall",
+  "name": "GameWithAll Battle DAO",
+  "host": "https://gwa.grudge-studio.com",
+  "notPlayerBag": true,
+  "ownership": "Railway user_cards",
+  "pack": {
+    "id": "gamewithall-pack",
+    "cardsPerPack": 3,
+    "tabs": ["duelyst", "grudawars"],
+    "shop": "https://dope-budz-production.up.railway.app/api/clash/shop/packs"
+  },
+  "directory": {
+    "duelyst": "https://duelyst.grudge-studio.com/catalog/duelyst-index.json",
+    "grudawars": "https://duelyst.grudge-studio.com/catalog/catalog.json",
+    "badbudzPlay": "https://duelyst.grudge-studio.com/catalog/badbudz.json"
+  },
+  "play": "https://thc-labz-battle.vercel.app/library",
+  "wallet": "https://wallet.grudge-studio.com",
+  "idLogin": "https://id.grudge-studio.com/login",
+  "orbisLaunch": "https://www.orbisonsol.io/launch",
+  "tokenStandard": "cNFT"
+}

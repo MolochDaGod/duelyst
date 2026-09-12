@@ -1,6 +1,7 @@
 # Duelyst Codex
 
-Live: **https://duelyst.grudge-studio.com**
+Live: **https://duelyst.grudge-studio.com**  
+GameWithAll launch: **https://gwa.grudge-studio.com** (Worker `gwa-launch` in `gwa-launch/`)
 
 Vercel project `duelyst` (alias `duelyst-seven.vercel.app`). Edge host is Worker `duelyst-codex-proxy`.
 

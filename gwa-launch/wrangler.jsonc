@@ -1,0 +1,15 @@
+{
+  "name": "gwa-launch",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-12",
+  "account_id": "ee475864561b02d4588180b8b9acf694",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    { "pattern": "gwa.grudge-studio.com", "custom_domain": true }
+  ]
+}
