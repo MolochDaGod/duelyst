@@ -3,227 +3,209 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GameWithAll Battle DAO — three cards, one pack</title>
-<meta name="description" content="Open a GameWithAll pack of 3. Collect every card on the Duelyst tab and the GrudaWars tab. cNFT launch on Orbis." />
+<title>GameWithAll — Grudge Studio · Warlords whitelist cNFT</title>
+<meta name="description" content="0.5 SOL whitelist: a Warlords character cNFT on your Grudge account for web MMO access. Collect Duelyst and GrudaWars cards in GameWithAll packs of 3." />
 <link rel="canonical" href="https://gwa.grudge-studio.com/" />
+<meta property="og:title" content="GameWithAll Battle DAO — Grudge Studio" />
+<meta property="og:description" content="Whitelist 0.5 SOL. Receive a Warlords character cNFT and enter the web MMO." />
+<meta property="og:image" content="https://gwa.grudge-studio.com/og/codex.png" />
+<meta property="og:image:alt" content="2D Codex card faces — Duelyst Lyonar generals" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://gwa.grudge-studio.com/og/card.png" />
+<link rel="icon" href="https://assets.grudge-studio.com/brand/logo.png" />
 <link rel="preconnect" href="https://assets.grudge-studio.com" />
+<link rel="preconnect" href="https://duelyst.grudge-studio.com" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --ink: #1a1410;
-    --vellum: #f4ead2;
-    --wax: #b42318;
-    --forest: #1f3d32;
-    --brass: #b08a3e;
-    --rule: #c9b48a;
-    --muted: #6d5c45;
+    --bg: #0a0810; --panel: #14101c; --ink: #f0e6d2; --muted: #8e8270;
+    --line: #2a2434; --gold: #e2c078;
+    --lyonar: #d8c06a; --songhai: #d14b4b; --vetruvian: #c9843a;
+    --abyssian: #7a5cff; --magmar: #3ecf7a; --vanar: #6ec8e8;
+    --neutral: #c4b8a4; --boss: #ff6b9d; --grudawars: #c9843a;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--vellum); color: var(--ink); }
-  body {
-    font-family: Outfit, "Segoe UI", sans-serif;
-    min-height: 100dvh;
-    background-image:
-      radial-gradient(1200px 500px at 10% -10%, #fff6e0 0%, transparent 55%),
-      repeating-linear-gradient(90deg, transparent 0 47px, rgba(176,138,62,.07) 47px 48px);
-  }
-  a { color: inherit; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 13px/1.45 "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+  h1, h2, h3, .display { font-family: Palatino, "Palatino Linotype", "Times New Roman", serif; font-weight: 700; letter-spacing: .04em; }
+  a { color: var(--gold); text-decoration: none; }
   header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 28px; border-bottom: 1px solid var(--rule);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #16111f, #0a0810);
   }
-  .mark { font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 22px; letter-spacing: -.02em; }
-  .mark span { color: var(--wax); }
-  nav { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 14px; }
-  nav a { text-decoration: none; color: var(--muted); }
-  nav a:hover { color: var(--ink); }
-  .btn {
-    border: 0; cursor: pointer; font: inherit;
-    background: var(--ink); color: var(--vellum);
-    padding: 10px 16px; border-radius: 999px;
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 36px; height: 36px; object-fit: contain; }
+  .brand h1 { margin: 0; font-size: 22px; color: var(--gold); font-style: italic; }
+  .brand .sub { color: var(--muted); font-size: 11px; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  nav a { color: var(--muted); padding: 4px 8px; }
+  nav a:hover { color: var(--gold); }
+  button, .btn {
+    font: inherit; color: inherit; background: #1a1524; border: 1px solid var(--line);
+    padding: 7px 12px; border-radius: 2px; cursor: pointer;
   }
-  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
-  .btn.wax { background: var(--wax); color: #fff; }
-  .hero {
-    display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px;
-    padding: 48px 28px 28px; max-width: 1180px; margin: 0 auto; align-items: center;
-  }
-  .hero h1 {
-    font-family: Fraunces, Georgia, serif; font-size: clamp(40px, 6vw, 72px);
-    line-height: .95; margin: 0 0 18px; font-weight: 700;
-  }
-  .hero p { font-size: 18px; line-height: 1.45; max-width: 38ch; color: var(--muted); margin: 0 0 22px; }
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .pack {
-    position: relative; height: 420px;
-    background: var(--forest); border-radius: 8px 8px 40px 8px;
-    box-shadow: 18px 22px 0 var(--ink);
-    overflow: hidden;
-  }
-  .pack::after {
-    content: "GWA"; position: absolute; right: 18px; bottom: 18px;
-    font-family: Fraunces, serif; color: var(--brass); font-size: 28px;
-  }
-  .fan { position: absolute; inset: 36px 28px 56px; }
-  .fan img, .fan .slot {
-    position: absolute; width: 46%; aspect-ratio: 195/284; object-fit: cover;
-    background: #0d0a08; border: 4px solid var(--vellum); image-rendering: pixelated;
-  }
-  .fan .a { left: 4%; top: 8%; transform: rotate(-9deg); }
-  .fan .b { left: 28%; top: 0; transform: rotate(2deg); z-index: 2; }
-  .fan .c { left: 50%; top: 12%; transform: rotate(11deg); }
-  .seal {
-    position: absolute; left: 50%; top: 58%; transform: translate(-50%, -20%);
-    width: 86px; height: 86px; border-radius: 50%; background: var(--wax);
-    box-shadow: inset 0 -8px 0 #7a140e; z-index: 4;
-    display: grid; place-items: center; color: #f8d7a4; font-family: Fraunces, serif; font-size: 28px;
-  }
-  .meta { display: flex; gap: 28px; padding: 8px 28px 36px; max-width: 1180px; margin: 0 auto; color: var(--muted); font-size: 14px; }
-  .meta b { color: var(--ink); font-weight: 600; display: block; font-size: 22px; font-family: Fraunces, serif; }
-  section { padding: 8px 28px 48px; max-width: 1180px; margin: 0 auto; }
-  h2 { font-family: Fraunces, serif; font-size: 32px; margin: 0 0 8px; }
-  .lede { color: var(--muted); margin: 0 0 20px; max-width: 60ch; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-  .tabs button {
-    font: inherit; cursor: pointer; background: transparent;
-    border: 1px solid var(--rule); padding: 8px 14px; border-radius: 999px; color: var(--muted);
-  }
-  .tabs button.on { background: var(--ink); color: var(--vellum); border-color: var(--ink); }
-  .search { width: min(420px, 100%); margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--rule); background: #fffaf0; font: inherit; }
+  button:hover, .btn:hover, button.on { border-color: var(--gold); color: var(--gold); }
+  .btn.gold { background: #2a2314; border-color: var(--gold); color: var(--gold); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 18px 48px; }
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: start; }
+  .hero h2 { font-size: clamp(28px, 4vw, 48px); margin: 0 0 12px; color: var(--gold); font-style: italic; }
+  .hero p { color: var(--muted); max-width: 46ch; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .ogfan { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ogfan img { width: 100%; border: 1px solid var(--line); background: #100c16; image-rendering: auto; }
+  .meta { display: flex; flex-wrap: wrap; gap: 22px; margin: 22px 0 8px; color: var(--muted); }
+  .meta b { display: block; color: var(--gold); font-family: Palatino, serif; font-size: 20px; }
+  section { margin-top: 36px; }
+  h3 { color: var(--gold); font-size: 22px; margin: 0 0 8px; }
+  .lede { color: var(--muted); max-width: 62ch; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+  .tabs button { padding: 4px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .search { width: min(420px, 100%); background: #1a1524; border: 1px solid var(--line); color: var(--ink); padding: 7px 10px; margin-bottom: 14px; }
   .album {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-    gap: 14px 12px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 14px; align-items: start;
   }
-  .stamp {
-    background: #fffaf0; border: 1px solid var(--rule); padding: 8px 8px 10px;
-    transform: rotate(var(--tilt, 0deg));
+  .card {
+    aspect-ratio: 195 / 284; background: #100c16; border: 1px solid var(--line);
+    overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 8px 24px #0008;
   }
-  .stamp img { width: 100%; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; background: #1a1410; }
-  .stamp .n { font-size: 12px; margin-top: 6px; line-height: 1.2; }
-  .stamp .s { font-size: 11px; color: var(--muted); }
-  .reveal { display: flex; gap: 12px; flex-wrap: wrap; min-height: 180px; margin-top: 12px; }
-  .reveal .drawn {
-    width: 140px; background: var(--ink); color: var(--vellum); padding: 8px;
+  .card:hover { border-color: var(--fac, var(--gold)); }
+  .card .art {
+    flex: 1; min-height: 0; display: grid; place-items: center;
+    background: #0d0a12 center/cover no-repeat;
   }
-  .reveal img { width: 100%; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-  .panel { border: 1px solid var(--rule); padding: 20px; background: #fffaf0; }
-  .panel h3 { font-family: Fraunces, serif; margin: 0 0 8px; }
-  .status { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
-  footer { border-top: 1px solid var(--rule); padding: 24px 28px 40px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  @media (max-width: 860px) {
-    .hero, .cols { grid-template-columns: 1fr; }
-    .pack { height: 340px; box-shadow: 10px 12px 0 var(--ink); }
-  }
+  .card .art img { max-width: 86%; max-height: 88%; object-fit: contain; image-rendering: pixelated; }
+  .card .foot { padding: 7px 8px 9px; border-top: 1px solid var(--line); font-size: 11px; }
+  .card .foot .n { color: var(--ink); }
+  .card .foot .s { color: var(--muted); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); padding: 16px; }
+  .status { color: var(--muted); min-height: 1.3em; margin-top: 8px; }
+  .reveal { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .reveal .drawn { width: 140px; }
+  footer { border-top: 1px solid var(--line); padding: 18px; color: var(--muted); font-size: 11px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  @media (max-width: 860px) { .hero, .cols { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <header>
-  <div class="mark">GameWith<span>All</span></div>
+  <div class="brand">
+    <img src="https://assets.grudge-studio.com/brand/logo.png" alt="Grudge Studio" />
+    <div>
+      <h1>GameWithAll</h1>
+      <div class="sub">Grudge Studio · Battle DAO · Warlords whitelist</div>
+    </div>
+  </div>
   <nav>
+    <a href="#whitelist">Whitelist</a>
     <a href="#directory">Directory</a>
-    <a href="#pack">Pack</a>
-    <a href="#dao">DAO</a>
-    <a href="#orbis">Orbis</a>
-    <button class="btn ghost" id="idBtn" type="button">Grudge ID</button>
-    <button class="btn" id="walBtn" type="button">Connect wallet</button>
+    <a href="#pack">Packs</a>
+    <a href="https://duelyst.grudge-studio.com">Codex</a>
+    <a href="https://character.grudge-studio.com">Foundry</a>
+    <a href="https://grudgewarlords.com">MMO</a>
+    <button type="button" id="idBtn">Grudge ID</button>
+    <button type="button" class="gold" id="walBtn">Connect wallet</button>
   </nav>
 </header>
 
-<main>
+<main class="wrap">
   <div class="hero">
     <div>
-      <h1>Three cards. Every war.</h1>
-      <p>GameWithAll Battle DAO sells one NFT pack. Each pack opens three cards drawn from the Codex Duelyst tab and the GrudaWars tab. Collect the library. Play them in Battle.</p>
+      <h2>0.5 SOL. One Warlords character. Web MMO access.</h2>
+      <p>Buy the GameWithAll whitelist. Payment is 0.5 SOL to the Grudge treasury. We mint a Warlords character cNFT onto your Grudge account — same Railway roster as Foundry, not a second bag. That hero is your key into the web MMO.</p>
+      <p>Card art and chrome are the Codex you already know: Duelyst tab + GrudaWars tab. Packs of 3 collect that library.</p>
       <div class="actions">
-        <button class="btn wax" id="openBtn" type="button">Open a 3-card pack</button>
-        <a class="btn ghost" href="#directory">Browse the album</a>
+        <button class="gold" type="button" id="wlBtn">Buy whitelist · 0.5 SOL</button>
+        <a class="btn" href="#directory">Browse cards</a>
       </div>
+      <p class="status" id="acctStatus"></p>
     </div>
-    <div class="pack" aria-hidden="true">
-      <div class="fan" id="fan"></div>
-      <div class="seal">3</div>
+    <div class="ogfan" aria-hidden="true">
+      <img src="/og/codex.png" alt="Codex Duelyst card grid" />
+      <img src="/og/card.png" alt="Lyonar card chrome" />
+      <img src="/og/duelyst.png" alt="Duelyst tab" />
+      <img src="/og/grudawars.png" alt="GrudaWars tab" />
     </div>
   </div>
   <div class="meta">
     <div><b id="nDuel">—</b> Duelyst tab</div>
     <div><b id="nGw">—</b> GrudaWars tab</div>
-    <div><b>3</b> cards per pack</div>
-    <div><b>cNFT</b> Orbis launch</div>
+    <div><b>0.5 SOL</b> whitelist</div>
+    <div><b>cNFT</b> Warlords character</div>
   </div>
 
-  <section id="pack">
-    <h2>The pack</h2>
-    <p class="lede">One GameWithAll pack is three pulls from the combined Duelyst + GrudaWars directory. Ownership writes to the existing Railway card ledger — not a second bag.</p>
-    <div class="actions">
-      <button class="btn wax" id="previewBtn" type="button">Preview three pulls</button>
-      <button class="btn" id="buyBtn" type="button">Buy pack (80 BUDZ)</button>
+  <section id="whitelist">
+    <h3>Whitelist · Warlords character cNFT</h3>
+    <p class="lede">Connect Grudge ID and a Solana wallet. Pay 0.5 SOL. We verify the transfer, then POST a Warlords-era human warrior onto <code>/api/characters</code> and request <code>/api/nfts/mint</code> (Crossmint cNFT). Play host is grudgewarlords.com with <code>characterId</code>.</p>
+    <div class="cols">
+      <div class="panel">
+        <h3>Pay</h3>
+        <p>Treasury <code id="treasury"></code></p>
+        <button class="gold" type="button" id="wlBtn2">Send 0.5 SOL</button>
+        <p class="status" id="wlStatus"></p>
+      </div>
+      <div class="panel">
+        <h3>What you receive</h3>
+        <p>One roster slot, era <code>warlords</code>, race human / class warrior, level 20 (Foundry default). Character UUID is the MMO handoff key. Cards from packs stay on Railway <code>user_cards</code>.</p>
+        <p><a href="https://character.grudge-studio.com/foundry">Open Foundry</a> · <a href="https://wallet.grudge-studio.com">Wallet</a></p>
+      </div>
     </div>
-    <div class="reveal" id="reveal"></div>
-    <p class="status" id="packStatus"></p>
   </section>
 
   <section id="directory">
-    <h2>Card directory</h2>
-    <p class="lede">Live Codex catalogs. Duelyst sprites from the R2 unit sheets. GrudaWars heroes from idle strips.</p>
+    <h3>Card directory</h3>
+    <p class="lede">Same Codex chrome as duelyst.grudge-studio.com. Sprites from assets.grudge-studio.com.</p>
     <div class="tabs">
       <button class="on" data-tab="all" type="button">All</button>
       <button data-tab="duelyst" type="button">Duelyst</button>
       <button data-tab="grudawars" type="button">GrudaWars</button>
     </div>
-    <input class="search" id="q" placeholder="Search name, faction, id" />
+    <input class="search" id="q" placeholder="search name, role, faction…" />
     <div class="album" id="album">Loading catalog…</div>
   </section>
 
-  <section id="dao">
-    <h2>Battle DAO</h2>
-    <div class="cols">
-      <div class="panel">
-        <h3>What ships</h3>
-        <p>Launch page on gwa.grudge-studio.com. Directory from duelyst.grudge-studio.com. Pack open on Dope-Budz Railway <code>user_cards</code>. Play at THC Labz Battle library.</p>
-      </div>
-      <div class="panel">
-        <h3>Accounts &amp; wallet</h3>
-        <p>Grudge ID for the studio account. Phantom / Solflare for the mint wallet. Game wallet UI remains <a href="https://wallet.grudge-studio.com">wallet.grudge-studio.com</a>. Same <code>grudge_id</code> bag law — cards are instances on Railway, not D1.</p>
-        <p class="status" id="acctStatus"></p>
-      </div>
+  <section id="pack">
+    <h3>GameWithAll pack · 3 cards</h3>
+    <p class="lede">After whitelist, packs open three cards from Duelyst + GrudaWars into the existing card ledger.</p>
+    <div class="actions">
+      <button type="button" id="previewBtn">Preview three pulls</button>
     </div>
+    <div class="reveal" id="reveal"></div>
+    <p class="status" id="packStatus"></p>
   </section>
 
   <section id="orbis">
-    <h2>Orbis launch pad</h2>
-    <p class="lede">Mint the collection as compressed cNFT on Solana through Orbis. This site is the project page to submit with the application.</p>
-    <div class="panel">
-      <p><strong>Project:</strong> GameWithAll Battle DAO<br>
-      <strong>Supply:</strong> packs of 3 from Duelyst + GrudaWars catalogs<br>
-      <strong>Standard:</strong> Compressed (cNFT)<br>
-      <strong>Website:</strong> https://gwa.grudge-studio.com</p>
-      <p><a class="btn wax" href="https://www.orbisonsol.io/launch" target="_blank" rel="noopener">Open Orbis launch form</a></p>
-    </div>
+    <h3>Orbis cNFT pad</h3>
+    <p class="lede">Collection standard is compressed cNFT. This page is the project site for <a href="https://www.orbisonsol.io/launch" target="_blank" rel="noopener">Orbis launch</a>.</p>
   </section>
 </main>
 
 <footer>
-  <span>Not a player bag. Definitions: Codex. Ownership: Railway user_cards.</span>
-  <span><a href="https://duelyst.grudge-studio.com">Codex</a> · <a href="https://thc-labz-battle.vercel.app/library">Battle library</a> · <a href="https://id.grudge-studio.com/login">Grudge ID</a></span>
+  <span>Grudge Studio · not a second bag · Railway characters + user_cards</span>
+  <span>
+    <a href="https://id.grudge-studio.com/login">ID</a> ·
+    <a href="https://duelyst.grudge-studio.com">Codex</a> ·
+    <a href="https://character.grudge-studio.com">Foundry</a> ·
+    <a href="https://grudgewarlords.com">Warlords</a>
+  </span>
 </footer>
 
+<script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
 <script>
 const TOKEN_KEYS = ["grudge.open.token","grudge_auth_token","grudge_session_token","grudge.token","sso_token","grudge_token"];
-const state = { tab: "all", cards: [], wallet: "", token: "" };
+const FAC = { lyonar:"#d8c06a", songhai:"#d14b4b", vetruvian:"#c9843a", abyssian:"#7a5cff", magmar:"#3ecf7a", vanar:"#6ec8e8", boss:"#ff6b9d", grudawars:"#c9843a", neutral:"#c4b8a4" };
+const state = { tab: "all", cards: [], wallet: "", token: "", treasury: "", lamports: 500000000 };
 
 function readToken() {
-  for (const k of TOKEN_KEYS) {
-    const v = localStorage.getItem(k);
-    if (v) return v;
-  }
+  for (const k of TOKEN_KEYS) { const v = localStorage.getItem(k); if (v) return v; }
   return "";
 }
-function storeToken(t) {
-  TOKEN_KEYS.forEach((k) => localStorage.setItem(k, t));
-}
+function storeToken(t) { TOKEN_KEYS.forEach((k) => localStorage.setItem(k, t)); }
 
 (function consumeAuth() {
   const u = new URL(location.href);
@@ -231,8 +213,7 @@ function storeToken(t) {
   const t = u.searchParams.get("grudge_token") || u.searchParams.get("sso_token") || hash.get("grudge_token") || hash.get("sso_token");
   if (t) {
     storeToken(t);
-    u.searchParams.delete("grudge_token");
-    u.searchParams.delete("sso_token");
+    u.searchParams.delete("grudge_token"); u.searchParams.delete("sso_token");
     history.replaceState({}, "", u.pathname + u.search);
   }
   state.token = readToken();
@@ -241,31 +222,25 @@ function storeToken(t) {
 function solana() {
   return window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null) || window.solflare;
 }
+function short(w) { return w ? w.slice(0,4) + "…" + w.slice(-4) : ""; }
 
 document.getElementById("idBtn").onclick = () => {
-  const dest = location.origin + "/auth/callback";
+  const dest = location.origin + "/";
   location.href = "https://id.grudge-studio.com/login?redirect_uri=" + encodeURIComponent(dest)
-    + "&redirect=" + encodeURIComponent(dest)
-    + "&return=" + encodeURIComponent(dest)
+    + "&redirect=" + encodeURIComponent(dest) + "&return=" + encodeURIComponent(dest)
     + "&app=gwa&origin=" + encodeURIComponent(location.origin);
 };
 
 document.getElementById("walBtn").onclick = async () => {
   const p = solana();
   const status = document.getElementById("acctStatus");
-  if (!p) {
-    status.textContent = "Install Phantom or Solflare, then connect.";
-    window.open("https://phantom.app", "_blank");
-    return;
-  }
+  if (!p) { status.textContent = "Install Phantom or Solflare."; window.open("https://phantom.app", "_blank"); return; }
   try {
     const res = await p.connect();
-    state.wallet = String(res.publicKey || p.publicKey || "");
-    status.textContent = "Wallet " + state.wallet.slice(0, 4) + "…" + state.wallet.slice(-4);
-    document.getElementById("walBtn").textContent = state.wallet.slice(0, 4) + "…" + state.wallet.slice(-4);
-  } catch (e) {
-    status.textContent = e.message || "Wallet connect cancelled.";
-  }
+    state.wallet = String(res.publicKey || p.publicKey);
+    status.textContent = "Wallet " + short(state.wallet) + (state.token ? " · Grudge ID session" : " · still need Grudge ID");
+    document.getElementById("walBtn").textContent = short(state.wallet);
+  } catch (e) { status.textContent = e.message || "Wallet cancelled."; }
 };
 
 async function loadDir(tab) {
@@ -274,25 +249,18 @@ async function loadDir(tab) {
   state.cards = j.cards || [];
   document.getElementById("nDuel").textContent = j.counts?.duelyst ?? "—";
   document.getElementById("nGw").textContent = j.counts?.grudawars ?? "—";
-  const fan = document.getElementById("fan");
-  const picks = [j.cards?.[2], j.cards?.[40], j.cards?.[(j.cards?.length || 1) - 8]].filter(Boolean);
-  fan.innerHTML = picks.map((c, i) => `<img class="${["a","b","c"][i]}" src="${c.image}" alt="">`).join("");
   renderAlbum();
 }
 
 function renderAlbum() {
   const q = document.getElementById("q").value.trim().toLowerCase();
-  const rows = state.cards.filter((c) => {
-    if (!q) return true;
-    return `${c.name} ${c.id} ${c.faction} ${c.tab}`.toLowerCase().includes(q);
-  }).slice(0, 180);
-  const el = document.getElementById("album");
-  el.innerHTML = rows.map((c, i) => {
-    const tilt = ((i % 5) - 2) * 1.1;
-    return `<article class="stamp" style="--tilt:${tilt}deg">
-      <img src="${c.image}" alt="${c.name}" loading="lazy" />
-      <div class="n">${c.name}</div>
-      <div class="s">${c.tab} · ${c.rarity} · ${c.cost}/${c.attack}/${c.health}</div>
+  const rows = state.cards.filter((c) => !q || `${c.name} ${c.id} ${c.faction} ${c.tab}`.toLowerCase().includes(q)).slice(0, 180);
+  document.getElementById("album").innerHTML = rows.map((c) => {
+    const fac = FAC[c.faction] || FAC.neutral;
+    const bg = c.chromeBg || "";
+    return `<article class="card" style="--fac:${fac}">
+      <div class="art" style="background-image:url('${bg}')"><img src="${c.image}" alt="${c.name}" loading="lazy" /></div>
+      <div class="foot"><div class="n">${c.name}</div><div class="s">${c.tab} · ${c.cost}/${c.attack}/${c.health}</div></div>
     </article>`;
   }).join("") || "<p>No cards in this filter.</p>";
 }
@@ -306,46 +274,64 @@ document.querySelectorAll(".tabs button").forEach((b) => {
   };
 });
 
-async function preview() {
+document.getElementById("previewBtn").onclick = async () => {
   const status = document.getElementById("packStatus");
   status.textContent = "Drawing three from the live directory…";
   const r = await fetch("/api/packs/preview", { method: "POST" });
   const j = await r.json();
-  const el = document.getElementById("reveal");
-  el.innerHTML = (j.cards || []).map((c) => `<div class="drawn"><img src="${c.image}" alt=""><div>${c.name}</div><div class="s">${c.tab}</div></div>`).join("");
-  status.textContent = j.success ? "Preview only — buy to write Railway user_cards." : (j.error || "Preview failed");
-}
-document.getElementById("openBtn").onclick = preview;
-document.getElementById("previewBtn").onclick = preview;
-
-document.getElementById("buyBtn").onclick = async () => {
-  const status = document.getElementById("packStatus");
-  if (!state.wallet) {
-    status.textContent = "Connect a wallet first.";
-    document.getElementById("walBtn").click();
-    return;
-  }
-  status.textContent = "Sending purchase to pack service…";
-  const r = await fetch("/api/packs/buy", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ walletAddress: state.wallet, packId: "gamewithall-pack", paymentType: "budz", openNow: true }),
-  });
-  const j = await r.json();
-  status.textContent = j.success ? "Pack purchased. Cards land in Railway user_cards." : (j.error || "Purchase failed — sign in on Dope-Budz if the wallet is unknown.");
-  if (j.cards) {
-    document.getElementById("reveal").innerHTML = j.cards.map((c) => {
-      const name = c.name || c.card_name || c.id;
-      const img = c.image || c.card_data?.image || "";
-      return `<div class="drawn"><img src="${img}" alt=""><div>${name}</div></div>`;
-    }).join("");
-  }
+  document.getElementById("reveal").innerHTML = (j.cards || []).map((c) =>
+    `<article class="card drawn" style="--fac:${FAC[c.faction]||FAC.neutral}"><div class="art" style="background-image:url('${c.chromeBg||''}')"><img src="${c.image}" alt=""></div><div class="foot"><div class="n">${c.name}</div><div class="s">${c.tab}</div></div></article>`
+  ).join("");
+  status.textContent = j.success ? "Preview — pack open still writes Railway user_cards." : (j.error || "Preview failed");
 };
 
-if (state.token) document.getElementById("acctStatus").textContent = "Grudge ID session on this origin.";
-loadDir("all").catch((e) => {
-  document.getElementById("album").textContent = "Directory failed: " + e.message;
+async function buyWhitelist() {
+  const status = document.getElementById("wlStatus");
+  if (!state.wallet) { await document.getElementById("walBtn").onclick(); if (!state.wallet) { status.textContent = "Connect a wallet first."; return; } }
+  if (!state.token) { status.textContent = "Sign in with Grudge ID so the character lands on your account."; return; }
+  const p = solana();
+  if (!p || !window.solanaWeb3) { status.textContent = "Solana wallet / web3 failed to load."; return; }
+  status.textContent = "Requesting 0.5 SOL transfer…";
+  try {
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3;
+    const from = new PublicKey(state.wallet);
+    const to = new PublicKey(state.treasury);
+    const conn = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
+    const ix = SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports: state.lamports });
+    const tx = new Transaction().add(ix);
+    tx.feePayer = from;
+    tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+    const signed = await p.signAndSendTransaction(tx);
+    const signature = signed.signature || signed;
+    status.textContent = "Sent " + signature + " — verifying and granting character…";
+    const headers = { "content-type": "application/json", authorization: "Bearer " + state.token };
+    const r = await fetch("/api/whitelist", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ signature, walletAddress: state.wallet }),
+    });
+    const j = await r.json();
+    if (!j.success) { status.textContent = j.error || "Whitelist failed."; return; }
+    if (j.needAccount) { status.textContent = j.message; return; }
+    if (j.characterId) {
+      status.innerHTML = "Character " + j.characterId + " on your roster. <a href='" + (j.playUrl || "#") + "'>Enter MMO</a> · <a href='" + (j.foundryUrl || "#") + "'>Foundry</a>";
+      return;
+    }
+    status.textContent = j.characterError || j.message || JSON.stringify(j);
+  } catch (e) {
+    status.textContent = e.message || String(e);
+  }
+}
+document.getElementById("wlBtn").onclick = buyWhitelist;
+document.getElementById("wlBtn2").onclick = buyWhitelist;
+
+fetch("/api/info").then((r) => r.json()).then((j) => {
+  state.treasury = j.whitelist?.treasury || "";
+  state.lamports = j.whitelist?.lamports || 500000000;
+  document.getElementById("treasury").textContent = state.treasury;
 });
+if (state.token) document.getElementById("acctStatus").textContent = "Grudge ID session on this origin.";
+loadDir("all").catch((e) => { document.getElementById("album").textContent = "Directory failed: " + e.message; });
 </script>
 </body>
 </html>

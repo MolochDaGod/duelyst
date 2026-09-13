@@ -18,6 +18,24 @@
   "play": "https://thc-labz-battle.vercel.app/library",
   "wallet": "https://wallet.grudge-studio.com",
   "idLogin": "https://id.grudge-studio.com/login",
+  "foundry": "https://character.grudge-studio.com",
+  "mmo": "https://grudgewarlords.com",
   "orbisLaunch": "https://www.orbisonsol.io/launch",
-  "tokenStandard": "cNFT"
+  "tokenStandard": "cNFT",
+  "whitelist": {
+    "priceSol": 0.5,
+    "treasury": "CLbdnF3UmE8nJPPTR8ZiPPJmYSEVm17nySNNHYUD5B2c",
+    "product": "warlords-character-cnft",
+    "grants": "One Warlords character on Railway roster for web MMO access"
+  },
+  "brand": {
+    "logo": "https://assets.grudge-studio.com/brand/logo.png",
+    "idLogo": "https://id.grudge-studio.com/grudge-id-logo.png"
+  },
+  "og": [
+    "/og/codex.png",
+    "/og/card.png",
+    "/og/duelyst.png",
+    "/og/grudawars.png"
+  ]
 }

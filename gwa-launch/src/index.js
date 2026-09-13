@@ -4,15 +4,26 @@
  */
 const CODEX = "https://duelyst.grudge-studio.com";
 const SHOP = "https://dope-budz-production.up.railway.app";
+const RAILWAY = "https://grudge-api-production-0d46.up.railway.app";
 const CDN_D = "https://assets.grudge-studio.com/sprites/duelyst";
 const CDN_G = "https://assets.grudge-studio.com/sprites/grudawars";
+const CHROME = `${CODEX}/tcg-chrome`;
+const RPC = "https://api.mainnet-beta.solana.com";
+/** Dope-Budz / fleet admin treasury — same public address as pack-service SSOT. */
+const TREASURY = "CLbdnF3UmE8nJPPTR8ZiPPJmYSEVm17nySNNHYUD5B2c";
+const WL_LAMPORTS = 500_000_000; // 0.5 SOL
 
 const INFO = {
   id: "gamewithall",
   name: "GameWithAll Battle DAO",
   host: "https://gwa.grudge-studio.com",
+  brand: {
+    studio: "Grudge Studio",
+    logo: "https://assets.grudge-studio.com/brand/logo.png",
+    idLogo: "https://id.grudge-studio.com/grudge-id-logo.png",
+  },
   notPlayerBag: true,
-  ownership: "Railway user_cards",
+  ownership: "Railway user_cards + characters",
   pack: {
     id: "gamewithall-pack",
     name: "GameWithAll Pack",
@@ -21,12 +32,24 @@ const INFO = {
     price: { budz: 80, gbux: 80, sol: 0.4 },
     shop: `${SHOP}/api/clash/shop/packs`,
   },
+  whitelist: {
+    priceSol: 0.5,
+    lamports: WL_LAMPORTS,
+    treasury: TREASURY,
+    product: "warlords-character-cnft",
+    grants: "One Warlords-era character on the account roster for web MMO access",
+    foundry: "https://character.grudge-studio.com/foundry",
+    play: "https://grudgewarlords.com/home-island",
+  },
   play: "https://thc-labz-battle.vercel.app/library",
+  mmo: "https://grudgewarlords.com",
+  foundry: "https://character.grudge-studio.com",
   codex: CODEX,
   wallet: "https://wallet.grudge-studio.com",
   idLogin: "https://id.grudge-studio.com/login",
   orbisLaunch: "https://www.orbisonsol.io/launch",
   tokenStandard: "cNFT",
+  og: "/og/codex.png",
 };
 
 function cors(extra = {}) {
@@ -78,6 +101,8 @@ function mapDuelyst(u) {
     health: Number(u.health ?? 0),
     image: u.sheet || `${CDN_D}/units/${id}.png`,
     plist: u.plist || `${CDN_D}/plists/${id}.plist`,
+    chromeBg: `${CHROME}/backgrounds/${u.faction || "neutral"}.png`,
+    chromeFrame: `${CHROME}/frames/${u.faction || "neutral"}.png`,
   };
 }
 
@@ -97,6 +122,8 @@ function mapGw(h) {
     attack: 3,
     health: 4,
     image: idle,
+    chromeBg: `${CHROME}/backgrounds/neutral.png`,
+    chromeFrame: `${CHROME}/frames/neutral.png`,
   };
 }
 
@@ -189,7 +216,141 @@ async function handleApi(request) {
     return json(data, upstream.status);
   }
 
+  if (path === "/api/whitelist" && request.method === "GET") {
+    return json({ success: true, whitelist: INFO.whitelist, brand: INFO.brand });
+  }
+
+  if (path === "/api/whitelist" && request.method === "POST") {
+    try {
+      const body = await request.json().catch(() => ({}));
+      const signature = String(body.signature || "").trim();
+      const wallet = String(body.walletAddress || body.wallet || "").trim();
+      if (!signature || !wallet) {
+        return json({ success: false, error: "signature and wallet required" }, 400);
+      }
+      const paid = await verifyWhitelistPayment(signature, wallet);
+      if (!paid.ok) return json({ success: false, error: paid.error }, 400);
+
+      const auth = request.headers.get("authorization") || "";
+      if (!auth.toLowerCase().startsWith("bearer ")) {
+        return json({
+          success: true,
+          paid: true,
+          signature,
+          needAccount: true,
+          message: "0.5 SOL confirmed. Sign in with Grudge ID to receive the Warlords character.",
+        });
+      }
+
+      const granted = await grantWarlordsCharacter(auth, wallet, signature);
+      return json({ success: true, paid: true, signature, ...granted });
+    } catch (e) {
+      return json({ success: false, error: String(e.message || e) }, 502);
+    }
+  }
+
   return json({ error: "not found", path }, 404);
+}
+
+function pubkeyOf(k) {
+  if (!k) return "";
+  if (typeof k === "string") return k;
+  return String(k.pubkey || k);
+}
+
+async function verifyWhitelistPayment(signature, fromWallet) {
+  const res = await fetch(RPC, {
+    method: "POST",
+    headers: { "content-type": "application/json", "user-agent": "gwa-launch" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "getTransaction",
+      params: [signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }],
+    }),
+  });
+  const j = await res.json();
+  const tx = j.result;
+  if (!tx) return { ok: false, error: "Transaction not found yet. Wait for confirm, then retry." };
+  if (tx.meta?.err) return { ok: false, error: "Transaction failed on-chain." };
+  const keys = (tx.transaction?.message?.accountKeys || []).map(pubkeyOf);
+  const ti = keys.findIndex((k) => k === TREASURY);
+  if (ti < 0) return { ok: false, error: "Payment did not reach the Grudge treasury." };
+  const delta = Number(tx.meta.postBalances[ti] || 0) - Number(tx.meta.preBalances[ti] || 0);
+  if (delta < WL_LAMPORTS) {
+    return { ok: false, error: `Need 0.5 SOL to treasury (got ${delta / 1e9} SOL).` };
+  }
+  const fi = keys.findIndex((k) => k === fromWallet);
+  if (fi < 0) return { ok: false, error: "Paying wallet is not on this transaction." };
+  return { ok: true, lamports: delta };
+}
+
+async function railway(path, auth, init = {}) {
+  const res = await fetch(`${RAILWAY}${path}`, {
+    ...init,
+    headers: {
+      authorization: auth,
+      "content-type": "application/json",
+      "user-agent": "gwa-launch",
+      ...(init.headers || {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  return { status: res.status, data };
+}
+
+async function grantWarlordsCharacter(auth, wallet, signature) {
+  const list = await railway("/api/characters?era=warlords", auth);
+  const rows = Array.isArray(list.data) ? list.data : list.data?.characters || list.data?.rows || [];
+  const existing = rows.find((c) => c?.model3d?.gwaWhitelist || c?.model3d?.whitelistTx === signature);
+  if (existing) {
+    return {
+      already: true,
+      characterId: existing.id,
+      playUrl: `https://grudgewarlords.com/home-island?characterId=${existing.id}&from=gwa`,
+      foundryUrl: `https://character.grudge-studio.com/?characterId=${existing.id}`,
+    };
+  }
+
+  const created = await railway("/api/characters", auth, {
+    method: "POST",
+    body: JSON.stringify({
+      name: "GWA Warlord",
+      raceId: "human",
+      classId: "warrior",
+      gameEra: "warlords",
+      skipAvatarGeneration: true,
+      model3d: {
+        gameEra: "warlords",
+        renderPipeline: "grudge6",
+        grudge6: true,
+        gwaWhitelist: true,
+        whitelistTx: signature,
+        whitelistWallet: wallet,
+        whitelistSol: 0.5,
+      },
+    }),
+  });
+  if (created.status >= 400 || !created.data?.id) {
+    return {
+      characterError: created.data?.error || created.data?.message || `character ${created.status}`,
+      paid: true,
+      foundryUrl: "https://character.grudge-studio.com/foundry?era=warlords&from=gwa",
+    };
+  }
+
+  const characterId = created.data.id;
+  const mint = await railway("/api/nfts/mint", auth, {
+    method: "POST",
+    body: JSON.stringify({ characterId, externalWallet: wallet }),
+  });
+
+  return {
+    characterId,
+    nft: mint.data || null,
+    playUrl: `https://grudgewarlords.com/home-island?characterId=${characterId}&from=gwa`,
+    foundryUrl: `https://character.grudge-studio.com/?characterId=${characterId}`,
+  };
 }
 
 export default {
