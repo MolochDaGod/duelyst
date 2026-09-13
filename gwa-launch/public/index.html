@@ -8,10 +8,10 @@
 <link rel="canonical" href="https://gwa.grudge-studio.com/" />
 <meta property="og:title" content="GameWithAll Battle DAO — Grudge Studio" />
 <meta property="og:description" content="Whitelist 0.5 SOL. Receive a Warlords character cNFT and enter the web MMO." />
-<meta property="og:image" content="https://gwa.grudge-studio.com/og/codex.png" />
-<meta property="og:image:alt" content="2D Codex card faces — Duelyst Lyonar generals" />
+<meta property="og:image" content="https://gwa.grudge-studio.com/og/pack-fan.png" />
+<meta property="og:image:alt" content="GameWithAll pack — Lyonar, Songhai, Arcane Archer Codex cards" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="https://gwa.grudge-studio.com/og/card.png" />
+<meta name="twitter:image" content="https://gwa.grudge-studio.com/og/face-lyonar.png" />
 <link rel="icon" href="https://assets.grudge-studio.com/brand/logo.png" />
 <link rel="preconnect" href="https://assets.grudge-studio.com" />
 <link rel="preconnect" href="https://duelyst.grudge-studio.com" />
@@ -54,8 +54,10 @@
   .hero h2 { font-size: clamp(28px, 4vw, 48px); margin: 0 0 12px; color: var(--gold); font-style: italic; }
   .hero p { color: var(--muted); max-width: 46ch; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-  .ogfan { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .ogfan img { width: 100%; border: 1px solid var(--line); background: #100c16; image-rendering: auto; }
+  .ogfan { display: grid; gap: 10px; }
+  .ogfan img.fan { width: 100%; border: 1px solid var(--line); background: #100c16; image-rendering: pixelated; }
+  .faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .faces img { width: 100%; image-rendering: pixelated; border: 1px solid var(--line); background: #100c16; }
   .meta { display: flex; flex-wrap: wrap; gap: 22px; margin: 22px 0 8px; color: var(--muted); }
   .meta b { display: block; color: var(--gold); font-family: Palatino, serif; font-size: 20px; }
   section { margin-top: 36px; }
@@ -70,18 +72,13 @@
   }
   .card {
     aspect-ratio: 195 / 284; background: #100c16; border: 1px solid var(--line);
-    overflow: hidden; display: flex; flex-direction: column;
-    box-shadow: 0 8px 24px #0008;
+    overflow: hidden; box-shadow: 0 8px 24px #0008;
   }
   .card:hover { border-color: var(--fac, var(--gold)); }
-  .card .art {
-    flex: 1; min-height: 0; display: grid; place-items: center;
-    background: #0d0a12 center/cover no-repeat;
+  .card canvas.face {
+    width: 100%; height: 100%; display: block;
+    image-rendering: pixelated; image-rendering: crisp-edges;
   }
-  .card .art img { max-width: 86%; max-height: 88%; object-fit: contain; image-rendering: pixelated; }
-  .card .foot { padding: 7px 8px 9px; border-top: 1px solid var(--line); font-size: 11px; }
-  .card .foot .n { color: var(--ink); }
-  .card .foot .s { color: var(--muted); }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .panel { background: var(--panel); border: 1px solid var(--line); padding: 16px; }
   .status { color: var(--muted); min-height: 1.3em; margin-top: 8px; }
@@ -125,11 +122,13 @@
       </div>
       <p class="status" id="acctStatus"></p>
     </div>
-    <div class="ogfan" aria-hidden="true">
-      <img src="/og/codex.png" alt="Codex Duelyst card grid" />
-      <img src="/og/card.png" alt="Lyonar card chrome" />
-      <img src="/og/duelyst.png" alt="Duelyst tab" />
-      <img src="/og/grudawars.png" alt="GrudaWars tab" />
+    <div class="ogfan">
+      <img class="fan" src="/og/pack-fan.png" alt="Three GameWithAll cards" />
+      <div class="faces">
+        <img src="/og/face-lyonar.png" alt="Lyonar General" />
+        <img src="/og/face-magmar.png" alt="Magmar General" />
+        <img src="/og/face-archer.png" alt="Arcane Archer" />
+      </div>
     </div>
   </div>
   <div class="meta">
@@ -196,7 +195,9 @@
 </footer>
 
 <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
-<script>
+<script type="module">
+import { observeAlbum } from "./card-face.js";
+
 const TOKEN_KEYS = ["grudge.open.token","grudge_auth_token","grudge_session_token","grudge.token","sso_token","grudge_token"];
 const FAC = { lyonar:"#d8c06a", songhai:"#d14b4b", vetruvian:"#c9843a", abyssian:"#7a5cff", magmar:"#3ecf7a", vanar:"#6ec8e8", boss:"#ff6b9d", grudawars:"#c9843a", neutral:"#c4b8a4" };
 const state = { tab: "all", cards: [], wallet: "", token: "", treasury: "", lamports: 500000000 };
@@ -252,17 +253,18 @@ async function loadDir(tab) {
   renderAlbum();
 }
 
+let albumIo = null;
 function renderAlbum() {
   const q = document.getElementById("q").value.trim().toLowerCase();
-  const rows = state.cards.filter((c) => !q || `${c.name} ${c.id} ${c.faction} ${c.tab}`.toLowerCase().includes(q)).slice(0, 180);
-  document.getElementById("album").innerHTML = rows.map((c) => {
+  const rows = state.cards.filter((c) => !q || `${c.name} ${c.id} ${c.faction} ${c.tab}`.toLowerCase().includes(q)).slice(0, 120);
+  const el = document.getElementById("album");
+  el.innerHTML = rows.map((c) => {
     const fac = FAC[c.faction] || FAC.neutral;
-    const bg = c.chromeBg || "";
-    return `<article class="card" style="--fac:${fac}">
-      <div class="art" style="background-image:url('${bg}')"><img src="${c.image}" alt="${c.name}" loading="lazy" /></div>
-      <div class="foot"><div class="n">${c.name}</div><div class="s">${c.tab} · ${c.cost}/${c.attack}/${c.health}</div></div>
-    </article>`;
+    return `<article class="card" style="--fac:${fac}"><canvas class="face" width="390" height="568"></canvas></article>`;
   }).join("") || "<p>No cards in this filter.</p>";
+  el.querySelectorAll("canvas.face").forEach((cv, i) => { cv._card = rows[i]; });
+  if (albumIo) albumIo.disconnect();
+  albumIo = observeAlbum(el);
 }
 
 document.getElementById("q").oninput = renderAlbum;
@@ -279,9 +281,12 @@ document.getElementById("previewBtn").onclick = async () => {
   status.textContent = "Drawing three from the live directory…";
   const r = await fetch("/api/packs/preview", { method: "POST" });
   const j = await r.json();
-  document.getElementById("reveal").innerHTML = (j.cards || []).map((c) =>
-    `<article class="card drawn" style="--fac:${FAC[c.faction]||FAC.neutral}"><div class="art" style="background-image:url('${c.chromeBg||''}')"><img src="${c.image}" alt=""></div><div class="foot"><div class="n">${c.name}</div><div class="s">${c.tab}</div></div></article>`
+  const el = document.getElementById("reveal");
+  el.innerHTML = (j.cards || []).map((c) =>
+    `<article class="card drawn" style="--fac:${FAC[c.faction]||FAC.neutral}"><canvas class="face" width="390" height="568"></canvas></article>`
   ).join("");
+  el.querySelectorAll("canvas.face").forEach((cv, i) => { cv._card = j.cards[i]; });
+  observeAlbum(el);
   status.textContent = j.success ? "Preview — pack open still writes Railway user_cards." : (j.error || "Preview failed");
 };
 
