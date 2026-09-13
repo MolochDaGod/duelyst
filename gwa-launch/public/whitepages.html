@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GameWithAll whitepages — whitelist ledger</title>
+<link rel="canonical" href="https://gwa.grudge-studio.com/whitepages.html" />
+<link rel="icon" href="https://assets.grudge-studio.com/brand/logo.png" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#0a0810; --panel:#14101c; --ink:#f0e6d2; --muted:#8e8270; --line:#2a2434; --gold:#e2c078; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 13px/1.5 "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+  h1 { font-family: Palatino, Georgia, serif; color: var(--gold); }
+  a { color: var(--gold); }
+  header, footer { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  footer { border: 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 28px 18px 64px; }
+  p { color: var(--muted); max-width: 70ch; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--gold); }
+  nav a { color: var(--muted); text-decoration: none; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/" style="color:var(--gold);font-family:Palatino,serif;font-style:italic;text-decoration:none">GameWithAll</a>
+  <nav>
+    <a href="/">Launch</a>
+    <a href="/plan.html">Game plan</a>
+    <a href="/whitepaper.html">Whitepapers</a>
+    <a href="/#whitelist">Buy seat</a>
+  </nav>
+</header>
+<main class="wrap">
+  <h1>Whitepages</h1>
+  <p>Public ledger of 0.5 SOL Warlords whitelist seats. A row is a shortened wallet, optional character UUID (MMO key), and the day the transfer cleared. Full addresses stay off this page. This is not a bag and not a second roster — it is the seat list.</p>
+  <p id="count">Loading…</p>
+  <table>
+    <thead><tr><th>#</th><th>Wallet</th><th>Character</th><th>SOL</th><th>When</th></tr></thead>
+    <tbody id="body"><tr><td colspan="5">…</td></tr></tbody>
+  </table>
+</main>
+<footer>Grudge Studio · gwa.grudge-studio.com/whitepages.html</footer>
+<script>
+fetch("/api/whitepages").then((r) => r.json()).then((j) => {
+  const seats = j.seats || [];
+  document.getElementById("count").textContent = seats.length
+    ? seats.length + " seat" + (seats.length === 1 ? "" : "s") + " on the ledger."
+    : "Ledger empty. The next 0.5 SOL whitelist is seat 1.";
+  const body = document.getElementById("body");
+  if (!seats.length) {
+    body.innerHTML = "<tr><td colspan='5'>No rows yet.</td></tr>";
+    return;
+  }
+  body.innerHTML = seats.map((s, i) => {
+    const cid = s.characterId
+      ? `<a href="https://grudgewarlords.com/home-island?characterId=${s.characterId}">${String(s.characterId).slice(0, 8)}…</a>`
+      : "pending Grudge ID";
+    return `<tr><td>${i + 1}</td><td>${s.walletShort || "—"}</td><td>${cid}</td><td>${s.paidSol ?? 0.5}</td><td>${s.at ? String(s.at).slice(0, 16).replace("T", " ") : "—"}</td></tr>`;
+  }).join("");
+}).catch(() => {
+  document.getElementById("count").textContent = "Ledger unavailable.";
+});
+</script>
+</body>
+</html>

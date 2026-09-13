@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GameWithAll whitepapers — Grudge Studio</title>
+<link rel="canonical" href="https://gwa.grudge-studio.com/whitepaper.html" />
+<link rel="icon" href="https://assets.grudge-studio.com/brand/logo.png" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#0a0810; --panel:#14101c; --ink:#f0e6d2; --muted:#8e8270; --line:#2a2434; --gold:#e2c078; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.55 "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+  h1, h2, h3 { font-family: Palatino, "Palatino Linotype", Georgia, serif; color: var(--gold); letter-spacing: .04em; }
+  a { color: var(--gold); }
+  header, footer { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  footer { border-bottom: 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 32px; height: 32px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 18px 64px; }
+  p, li { color: var(--muted); }
+  code { color: var(--ink); }
+  nav a { color: var(--muted); padding: 4px 8px; text-decoration: none; }
+  nav a:hover { color: var(--gold); }
+  article { margin-top: 40px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/" style="text-decoration:none;color:inherit">
+    <img src="https://assets.grudge-studio.com/brand/logo.png" alt="Grudge Studio" />
+    <strong style="font-family:Palatino,serif;color:var(--gold);font-style:italic">GameWithAll</strong>
+  </a>
+  <nav>
+    <a href="/">Launch</a>
+    <a href="/plan.html">Game plan</a>
+    <a href="/whitepages.html">Whitepages</a>
+    <a href="#dao">I DAO</a>
+    <a href="#packs">II Packs</a>
+    <a href="#warlords">III Warlords</a>
+  </nav>
+</header>
+<main class="wrap">
+  <h1>Whitepapers</h1>
+  <p>Three short papers. They describe the live Grudge Studio path. They do not invent a second bag, roster, or card host.</p>
+
+  <article id="dao">
+    <h2>I · GameWithAll Battle DAO</h2>
+    <p>GameWithAll is the launch brand for collecting every card on the Codex <strong>Duelyst</strong> tab and the <strong>GrudaWars</strong> tab, then playing them in THC Labz Battle, while a Warlords-era hero on the same Grudge account opens the web MMO.</p>
+    <p>The DAO seat is a <strong>0.5 SOL</strong> whitelist paid to the fleet treasury. The product is not a random JPEG. It is a Warlords character cNFT written onto Railway <code>characters</code> (era <code>warlords</code>) and minted through the existing Crossmint route <code>POST /api/nfts/mint</code>.</p>
+    <p>Host: <a href="https://gwa.grudge-studio.com">gwa.grudge-studio.com</a>. Studio login: <a href="https://id.grudge-studio.com/login">id.grudge-studio.com</a>. Wallet UI: <a href="https://wallet.grudge-studio.com">wallet.grudge-studio.com</a>. Collection pad: <a href="https://www.orbisonsol.io/launch">Orbis</a>, compressed cNFT.</p>
+    <p>Grudge Studio brands stay separate. This page does not replace Grudge Open, GRUDOX, or Foundry. It hands a character into Warlords play.</p>
+  </article>
+
+  <article id="packs">
+    <h2>II · Packs and ownership</h2>
+    <p>One GameWithAll pack opens <strong>three</strong> cards. The pool is the Codex Duelyst tab plus the GrudaWars tab. Battle play currently surfaces the Codex <strong>BadBudz</strong> Magmar set (Duelyst sheets, THC chrome) and <strong>GrudaWars</strong> idle strips.</p>
+    <p>Ownership is Railway <code>user_cards</code> on the Dope-Budz / Battle ledger. Definitions live on Codex / <code>info</code>. D1 and R2 are not the bag. Clash Season 1 names are city PVE opponents, not this pack pool.</p>
+    <p>After a Clash-art purge (2026-09), player gameplay catalogs list 145 Codex play cards. Deck builder: <a href="https://thc-labz-battle.vercel.app/build">thc-labz-battle.vercel.app/build</a>.</p>
+    <p>Pack id <code>gamewithall-pack</code> is on the Dope-Budz shop catalog. Preview on this host does not mint; buy still hits the existing clash shop.</p>
+  </article>
+
+  <article id="warlords">
+    <h2>III · Warlords character access</h2>
+    <p>Whitelist payment is verified on Solana mainnet against treasury <code>CLbdnF3UmE8nJPPTR8ZiPPJmYSEVm17nySNNHYUD5B2c</code> (0.5 SOL = 500_000_000 lamports).</p>
+    <p>With a Grudge ID bearer token the Worker posts a Warlords human / warrior (Foundry default level 20) to <code>https://grudge-api-production-0d46.up.railway.app/api/characters</code>, then requests the character cNFT mint. The character UUID is the only play handoff key: <code>?characterId=&lt;uuid&gt;&amp;era=warlords</code>.</p>
+    <p>Create-only Foundry remains <a href="https://character.grudge-studio.com/foundry">character.grudge-studio.com/foundry</a>. Live play is <a href="https://grudgewarlords.com">grudgewarlords.com</a> / <a href="https://client.grudge-studio.com">client.grudge-studio.com</a>. Map load rebinds terrain only. The hero, bag, and skills stay on that session.</p>
+  </article>
+</main>
+<footer>
+  <span>Grudge Studio · GameWithAll</span>
+  <a href="/">Back to launch</a>
+</footer>
+</body>
+</html>

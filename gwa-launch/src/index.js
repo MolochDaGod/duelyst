@@ -49,7 +49,25 @@ const INFO = {
   idLogin: "https://id.grudge-studio.com/login",
   orbisLaunch: "https://www.orbisonsol.io/launch",
   tokenStandard: "cNFT",
-  og: "/og/codex.png",
+  og: "/og/pack-fan.png",
+  papers: [
+    { id: "dao", href: "/whitepaper.html#dao", title: "GameWithAll Battle DAO", blurb: "What the project is, who it is for, and what 0.5 SOL buys." },
+    { id: "packs", href: "/whitepaper.html#packs", title: "Packs and ownership", blurb: "3-card GameWithAll packs. Railway user_cards. No second bag." },
+    { id: "warlords", href: "/whitepaper.html#warlords", title: "Warlords character access", blurb: "Whitelist cNFT → Foundry roster → web MMO handoff." },
+  ],
+  gamePlan: [
+    { n: 1, title: "Whitelist", detail: "Pay 0.5 SOL. Grudge ID + wallet. Warlords character cNFT on the account roster." },
+    { n: 2, title: "Enter the MMO", detail: "Foundry 4-slot hub. Play host grudgewarlords.com?characterId= UUID. Era stays warlords." },
+    { n: 3, title: "Collect", detail: "Open GameWithAll packs of 3 from the Duelyst tab and the GrudaWars tab." },
+    { n: 4, title: "Build", detail: "Deck on thc-labz-battle.vercel.app/build. Codex chrome. Clash Season 1 is city PVE only." },
+    { n: 5, title: "Battle", detail: "Library + PVE cities. Commander is the GROWERZ / Grudge cNFT on the castle." },
+    { n: 6, title: "Launch pad", detail: "Orbis compressed cNFT collection. This host is the project website on the application." },
+  ],
+  links: {
+    battleBuild: "https://thc-labz-battle.vercel.app/build",
+    battleLibrary: "https://thc-labz-battle.vercel.app/library",
+    gwa: "https://gwa.grudge-studio.com",
+  },
 };
 
 function cors(extra = {}) {
@@ -157,7 +175,31 @@ function pick3(cards) {
   return out;
 }
 
-async function handleApi(request) {
+async function listWhitepages(env) {
+  let seats = [];
+  if (env?.GWA_PAGES) {
+    const extra = await env.GWA_PAGES.get("seats", { type: "json" }).catch(() => null);
+    if (Array.isArray(extra)) seats = extra;
+  }
+  return seats.map((s) => ({
+    walletShort: s.walletShort || (s.wallet ? `${String(s.wallet).slice(0, 4)}…${String(s.wallet).slice(-4)}` : "—"),
+    characterId: s.characterId || null,
+    paidSol: s.paidSol || 0.5,
+    at: s.at || null,
+    signature: s.signature ? `${String(s.signature).slice(0, 8)}…` : null,
+  }));
+}
+
+async function rememberWhitepage(env, seat) {
+  if (!env?.GWA_PAGES) return;
+  const cur = (await env.GWA_PAGES.get("seats", { type: "json" }).catch(() => null)) || [];
+  const list = Array.isArray(cur) ? cur : [];
+  if (list.some((s) => s.signature === seat.signature || s.wallet === seat.wallet)) return;
+  list.unshift(seat);
+  await env.GWA_PAGES.put("seats", JSON.stringify(list.slice(0, 2000)));
+}
+
+async function handleApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
@@ -170,6 +212,20 @@ async function handleApi(request) {
   }
   if (path === "/api/info" || path === "/api/v1/gamewithall") {
     return json(INFO);
+  }
+  if (path === "/api/plan") {
+    return json({ success: true, gamePlan: INFO.gamePlan, papers: INFO.papers, whitelist: INFO.whitelist });
+  }
+  if (path === "/api/whitepages") {
+    const seats = await listWhitepages(env);
+    return json({
+      success: true,
+      title: "GameWithAll whitepages",
+      priceSol: 0.5,
+      product: INFO.whitelist.product,
+      count: seats.length,
+      seats,
+    });
   }
   if (path === "/api/directory" || path === "/api/cards") {
     try {
@@ -233,17 +289,36 @@ async function handleApi(request) {
 
       const auth = request.headers.get("authorization") || "";
       if (!auth.toLowerCase().startsWith("bearer ")) {
+        const seat = {
+          wallet,
+          walletShort: `${wallet.slice(0, 4)}…${wallet.slice(-4)}`,
+          signature,
+          characterId: null,
+          paidSol: 0.5,
+          at: new Date().toISOString(),
+        };
+        await rememberWhitepage(env, seat);
         return json({
           success: true,
           paid: true,
           signature,
+          seat,
           needAccount: true,
           message: "0.5 SOL confirmed. Sign in with Grudge ID to receive the Warlords character.",
         });
       }
 
       const granted = await grantWarlordsCharacter(auth, wallet, signature);
-      return json({ success: true, paid: true, signature, ...granted });
+      const seat = {
+        wallet,
+        walletShort: `${wallet.slice(0, 4)}…${wallet.slice(-4)}`,
+        signature,
+        characterId: granted.characterId || null,
+        paidSol: 0.5,
+        at: new Date().toISOString(),
+      };
+      await rememberWhitepage(env, seat);
+      return json({ success: true, paid: true, signature, seat, ...granted });
     } catch (e) {
       return json({ success: false, error: String(e.message || e) }, 502);
     }
@@ -356,7 +431,7 @@ async function grantWarlordsCharacter(auth, wallet, signature) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/")) return handleApi(request);
+    if (url.pathname.startsWith("/api/")) return handleApi(request, env);
     return env.ASSETS.fetch(request);
   },
 };

@@ -80,13 +80,21 @@
     image-rendering: pixelated; image-rendering: crisp-edges;
   }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .panel { background: var(--panel); border: 1px solid var(--line); padding: 16px; }
+  .panel p { color: var(--muted); }
+  ol.plan { margin: 0; padding: 0; list-style: none; }
+  ol.plan li { display: grid; grid-template-columns: 2.2rem 1fr; gap: 10px; margin: 0 0 12px; }
+  ol.plan b { color: var(--gold); font-family: Palatino, serif; font-size: 20px; }
+  table.wp { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.wp th, table.wp td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  table.wp th { color: var(--gold); font-weight: 500; }
   .status { color: var(--muted); min-height: 1.3em; margin-top: 8px; }
   .reveal { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
   .reveal .drawn { width: 140px; }
   footer { border-top: 1px solid var(--line); padding: 18px; color: var(--muted); font-size: 11px;
     display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  @media (max-width: 860px) { .hero, .cols { grid-template-columns: 1fr; } }
+  @media (max-width: 860px) { .hero, .cols, .cols3 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -99,6 +107,10 @@
     </div>
   </div>
   <nav>
+    <a href="#info">Info</a>
+    <a href="#plan">Game plan</a>
+    <a href="/whitepaper.html">Whitepapers</a>
+    <a href="/whitepages.html">Whitepages</a>
     <a href="#whitelist">Whitelist</a>
     <a href="#directory">Directory</a>
     <a href="#pack">Packs</a>
@@ -118,6 +130,8 @@
       <p>Card art and chrome are the Codex you already know: Duelyst tab + GrudaWars tab. Packs of 3 collect that library.</p>
       <div class="actions">
         <button class="gold" type="button" id="wlBtn">Buy whitelist · 0.5 SOL</button>
+        <a class="btn" href="#plan">Game plan</a>
+        <a class="btn" href="/whitepaper.html">Whitepapers</a>
         <a class="btn" href="#directory">Browse cards</a>
       </div>
       <p class="status" id="acctStatus"></p>
@@ -137,6 +151,58 @@
     <div><b>0.5 SOL</b> whitelist</div>
     <div><b>cNFT</b> Warlords character</div>
   </div>
+
+  <section id="info">
+    <h3>Info</h3>
+    <p class="lede">GameWithAll Battle DAO is the Grudge Studio launch for collecting the Codex Duelyst tab and the GrudaWars tab, then playing those cards in THC Labz Battle and carrying a Warlords hero into the web MMO.</p>
+    <div class="cols3">
+      <div class="panel">
+        <h3>Account</h3>
+        <p>Login is Grudge ID only. Bag, wallet, and home island stay on the account <code>grudge_id</code>. The hero is a character UUID on Railway. Packs write <code>user_cards</code>. We do not open a second roster or bag.</p>
+      </div>
+      <div class="panel">
+        <h3>Cards</h3>
+        <p>Play set is Codex BadBudz (Magmar Duelyst reskins) plus GrudaWars heroes. Art is R2 sprites + tcg-chrome. Clash Season 1 is city PVE / AI, not the player mint pool. Live deck builder: <a href="https://thc-labz-battle.vercel.app/build">/build</a>.</p>
+      </div>
+      <div class="panel">
+        <h3>cNFT</h3>
+        <p>Whitelist is 0.5 SOL to the fleet treasury. Product is a Warlords-era character cNFT (Crossmint on the existing <code>/api/nfts/mint</code> path). Collection listing is Orbis compressed cNFT. Papers: <a href="/whitepaper.html">whitepaper.html</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <h3>Game plan</h3>
+    <p class="lede">Six steps from seat to battle. Full write-up: <a href="/plan.html">plan.html</a>.</p>
+    <ol class="plan">
+      <li><b>1</b><div><strong>Whitelist</strong> — 0.5 SOL, Grudge ID + Phantom. Warlords human/warrior L20 on the account roster.</div></li>
+      <li><b>2</b><div><strong>Enter MMO</strong> — Foundry 4-slot, then <code>grudgewarlords.com/home-island?characterId=</code>.</div></li>
+      <li><b>3</b><div><strong>Collect</strong> — GameWithAll pack of 3 from Duelyst + GrudaWars tabs.</div></li>
+      <li><b>4</b><div><strong>Build</strong> — <a href="https://thc-labz-battle.vercel.app/build">Battle /build</a> with Codex chrome, not Clash clones.</div></li>
+      <li><b>5</b><div><strong>Fight</strong> — Library play. City PVE uses Season 1 as AI. Commander is the castle cNFT.</div></li>
+      <li><b>6</b><div><strong>Launch</strong> — Orbis pad. This host is the project website on the application.</div></li>
+    </ol>
+  </section>
+
+  <section id="papers">
+    <h3>Whitepapers</h3>
+    <div class="cols3">
+      <div class="panel"><h3>I · DAO</h3><p>What GameWithAll is and what the 0.5 SOL seat buys.</p><p><a href="/whitepaper.html#dao">Read</a></p></div>
+      <div class="panel"><h3>II · Packs</h3><p>Three cards per pack. Ownership law. Railway ledger.</p><p><a href="/whitepaper.html#packs">Read</a></p></div>
+      <div class="panel"><h3>III · Warlords</h3><p>Character UUID, Foundry, web MMO access.</p><p><a href="/whitepaper.html#warlords">Read</a></p></div>
+    </div>
+  </section>
+
+  <section id="whitepages">
+    <h3>Whitepages</h3>
+    <p class="lede">Public seat ledger for the 0.5 SOL Warlords whitelist. Wallets are shortened. Character UUID is the MMO key. Full page: <a href="/whitepages.html">whitepages.html</a>.</p>
+    <div class="panel" style="overflow:auto">
+      <table class="wp">
+        <thead><tr><th>Seat</th><th>Wallet</th><th>Character</th><th>SOL</th><th>When</th></tr></thead>
+        <tbody id="wpBody"><tr><td colspan="5">Loading ledger…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
 
   <section id="whitelist">
     <h3>Whitelist · Warlords character cNFT</h3>
@@ -336,6 +402,18 @@ fetch("/api/info").then((r) => r.json()).then((j) => {
   document.getElementById("treasury").textContent = state.treasury;
 });
 if (state.token) document.getElementById("acctStatus").textContent = "Grudge ID session on this origin.";
+function fillWhitepages(seats) {
+  const body = document.getElementById("wpBody");
+  if (!body) return;
+  if (!seats.length) {
+    body.innerHTML = "<tr><td colspan='5'>No seats posted yet. Buy whitelist to take the next row.</td></tr>";
+    return;
+  }
+  body.innerHTML = seats.map((s, i) =>
+    `<tr><td>${i + 1}</td><td>${s.walletShort || "—"}</td><td>${s.characterId ? `<a href="https://grudgewarlords.com/home-island?characterId=${s.characterId}">${s.characterId.slice(0, 8)}…</a>` : "pending ID"}</td><td>${s.paidSol ?? 0.5}</td><td>${s.at ? String(s.at).slice(0, 10) : "—"}</td></tr>`
+  ).join("");
+}
+fetch("/api/whitepages").then((r) => r.json()).then((j) => fillWhitepages(j.seats || [])).catch(() => fillWhitepages([]));
 loadDir("all").catch((e) => { document.getElementById("album").textContent = "Directory failed: " + e.message; });
 </script>
 </body>
