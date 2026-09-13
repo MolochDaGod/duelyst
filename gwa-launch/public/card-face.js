@@ -1,6 +1,20 @@
 /** Codex-style 2x card faces: plist idle + Scale2x + chrome frame. */
 const CHROME = "https://duelyst.grudge-studio.com/tcg-chrome";
 const CW = 195, CH = 284, SX = 2;
+const CARD_FONT = '"Libre Baskerville", Cambria, "Palatino Linotype", Palatino, Georgia, serif';
+
+let fontsReady = null;
+function ensureFonts() {
+  if (fontsReady) return fontsReady;
+  fontsReady = (document.fonts
+    ? Promise.all([
+      document.fonts.load(`700 14px ${CARD_FONT}`),
+      document.fonts.load(`400 10px ${CARD_FONT}`),
+      document.fonts.load(`700 18px ${CARD_FONT}`),
+    ])
+    : Promise.resolve()).catch(() => {});
+  return fontsReady;
+}
 
 export function parsePlist(xml) {
   const frames = [];
@@ -112,14 +126,41 @@ function ink(img, fr) {
   return { canvas: o, w: o.width, h: o.height };
 }
 
-function strokeText(ctx, s, x, y, size) {
-  ctx.font = `bold ${size}px Palatino, "Palatino Linotype", Georgia, serif`;
+function strokeText(ctx, s, x, y, size, weight = "700") {
+  ctx.font = `${weight} ${size}px ${CARD_FONT}`;
   ctx.lineJoin = "round";
+  ctx.miterLimit = 2;
   ctx.strokeStyle = "#120a06";
-  ctx.lineWidth = Math.max(3, size / 3);
+  ctx.lineWidth = Math.max(2.6, size / 3.2);
   ctx.fillStyle = "#fff4d6";
   ctx.strokeText(s, x, y);
   ctx.fillText(s, x, y);
+}
+
+function fitName(ctx, text, maxW, size) {
+  let s = size;
+  const str = String(text || "");
+  ctx.font = `700 ${s}px ${CARD_FONT}`;
+  while (s > 8 && ctx.measureText(str).width > maxW) {
+    s -= 0.4;
+    ctx.font = `700 ${s}px ${CARD_FONT}`;
+  }
+  return s;
+}
+
+function wrapLine(ctx, text, maxW) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? cur + " " + w : w;
+    if (ctx.measureText(next).width > maxW && cur) {
+      lines.push(cur);
+      cur = w;
+    } else cur = next;
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 3);
 }
 
 function gem(ctx, cx, cy, r, fill, n) {
@@ -132,7 +173,7 @@ function gem(ctx, cx, cy, r, fill, n) {
   ctx.stroke();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  strokeText(ctx, String(n), cx, cy + 1, 16);
+  strokeText(ctx, String(n), cx, cy + 0.5, 17);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
 }
@@ -160,6 +201,7 @@ async function loadGw(card) {
 }
 
 export async function paintCard(canvas, card) {
+  await ensureFonts();
   const L = await layout();
   const fac = card.faction === "grudawars" ? "neutral" : (card.faction || "neutral");
   const art = artBox(L, fac);
@@ -187,10 +229,10 @@ export async function paintCard(canvas, card) {
     ctx.beginPath();
     ctx.rect(art.x, art.y, art.w, art.h);
     ctx.clip();
-    const s = Math.min(art.w / cut.w, art.h / cut.h) * 0.92;
+    const s = Math.min(art.w / cut.w, art.h / cut.h);
     const dw = cut.w * s, dh = cut.h * s;
     const dx = art.x + (art.w - dw) / 2;
-    const dy = art.y + art.h - dh;
+    const dy = art.y + (art.h - dh) / 2;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(cut.canvas, dx, dy, dw, dh);
     ctx.restore();
@@ -200,7 +242,26 @@ export async function paintCard(canvas, card) {
 
   if (frame) ctx.drawImage(frame, 0, 0, CW, CH);
   const st = L.stats || {};
-  strokeText(ctx, String(card.name || "").slice(0, 22), 12, 20, 13);
+  const fonts = L.fonts || {};
+  const nameBox = L.name || { x: 10, y: 6, w: 148, h: 24, size: 14 };
+  const title = String(card.name || "");
+  const nameSize = fitName(ctx, title, nameBox.w - 4, nameBox.size || fonts.name || 14);
+  ctx.textBaseline = "middle";
+  strokeText(ctx, title, nameBox.x + 2, nameBox.y + nameBox.h / 2, nameSize);
+  ctx.textBaseline = "alphabetic";
+
+  const ribbon = L.ribbon || { x: 16, y: 164, w: 163, h: 32 };
+  const kind = [card.tab, card.rarity, card.role || card.class].filter(Boolean).join(" · ").toUpperCase();
+  const body = String(card.description || (card.abilities || []).join(" · ") || "");
+  ctx.font = `400 ${fonts.body || 10}px ${CARD_FONT}`;
+  ctx.fillStyle = "#2a2218";
+  ctx.textBaseline = "top";
+  const lines = wrapLine(ctx, body || kind, ribbon.w - 6);
+  lines.forEach((ln, i) => {
+    ctx.fillText(ln, ribbon.x + 3, ribbon.y + 4 + i * 11);
+  });
+  ctx.textBaseline = "alphabetic";
+
   if (st.cost) gem(ctx, st.cost.cx, st.cost.cy, st.cost.r || 14, "#3a7bd9", card.cost ?? 0);
   if (st.attack) gem(ctx, st.attack.cx, st.attack.cy, st.attack.r || 15, "#c9a227", card.attack ?? 0);
   if (st.health) gem(ctx, st.health.cx, st.health.cy, st.health.r || 15, "#2f9e4f", card.health ?? 0);
