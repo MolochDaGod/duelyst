@@ -17,6 +17,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CATALOG_VERSION } from "../catalog-version.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "../..");
@@ -197,6 +198,7 @@ const stillDupe = Object.values(
 ).filter((n) => n > 1).length;
 
 const out = {
+  catalogVersion: CATALOG_VERSION,
   ...SET,
   generated: new Date().toISOString(),
   total: cards.length,
