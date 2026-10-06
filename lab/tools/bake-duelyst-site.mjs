@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { clashAbility } from "../clash-abilities.mjs";
 import { kitOf, clipsFromPlistXml } from "../runtime/DuelystSprite.js";
 import { flattenCityPve } from "../../rpg-maker-studio/pve-roster.mjs";
+import { CATALOG_VERSION } from "../catalog-version.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DUEL = path.resolve(here, "..");
@@ -113,6 +114,7 @@ const heroes = (STUDIO_CAT.heroes || []).map((h) => ({
   ),
 }));
 const catalog = {
+  catalogVersion: CATALOG_VERSION,
   purpose: "catalog",
   notPlayerBag: true,
   cardCount: pveCards.length,
